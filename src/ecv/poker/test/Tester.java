@@ -5,7 +5,7 @@ import java.util.List;
 import android.util.Log;
 import ecv.poker.card.Card;
 import ecv.poker.card.Evaluator;
-import ecv.poker.card.Table;
+import ecv.poker.card.Game;
 import ecv.poker.player.Player;
 
 /**
@@ -17,7 +17,7 @@ import ecv.poker.player.Player;
  */
 public class Tester {
 
-	private static Table table = new Table();
+	private static Game table = new Game();
 	private static Player player = new Player(table);
 
 	// run tests to check hands for expected values

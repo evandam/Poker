@@ -6,20 +6,21 @@ import java.util.List;
 import ecv.poker.player.Player;
 
 /**
- * A representation of where a game of poker takes place.
- * A table has a deck of cards, community cards used in the game,
- * And two players.
+ * A representation of a game of poker.
+ * A game has a players,
+ * a deck of cards, 
+ * and community cards all players can use,
  * 
  * Unsure of what package to keep this in...really only acts as a container
  * 
  * @author Evan
  */
-public class Table {
+public class Game {
 	private Deck deck;
 	private Player user, computer;
 	private List<Card> communityCards;
 	
-	public Table() {
+	public Game() {
 		deck = new Deck();
 		communityCards = new LinkedList<Card>();
 		user = new Player(this);

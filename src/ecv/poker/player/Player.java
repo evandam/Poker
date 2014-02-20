@@ -2,13 +2,13 @@ package ecv.poker.player;
 
 import ecv.poker.card.Card;
 import ecv.poker.card.Hand;
-import ecv.poker.card.Table;
+import ecv.poker.card.Game;
 
 public class Player {
 	private int chips;
 	private Hand hand;
 	
-	public Player(Table table) {
+	public Player(Game table) {
 		chips = 1000;	// or some default number?
 		hand = new Hand(table.getCommunityCards());
 	}
