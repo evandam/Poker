@@ -1,5 +1,6 @@
 package ecv.poker.card;
 
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -53,65 +54,94 @@ public class Hand implements Comparable<Hand>{
 	 * @return List of up to 5 cards with greatest value
 	 */
 	public List<Card> getBestCards() {
-		LinkedList<Card> allCards = new LinkedList<Card>();
-		allCards.addAll(communityCards);
+		List<Card> allCards = new LinkedList<Card>(communityCards);
 		allCards.addAll(myCards);
-		LinkedList<Card> bestCards = new LinkedList<Card>(allCards);
 		
+		int bestVal = -1, bestValFurther = -1;
+		int bestCardId1 = -1, bestCardId2 = -1;
+		
+		int listSize = allCards.size();
 		// make a 5 card hand by removing all combinations of 2 cards
-		if(allCards.size() > 5) {
+		if(listSize > 5) {
 			// remove a card from hand to evaluate 5 card hand
 			for(int i = 0; i < 6; i++) {
 				Card removedCard1 = allCards.remove(0);
 				// evaluating 7 cards...need to remove another card
-				if(allCards.size() > 5) {
-					for(int j = i; j < 7; j++) {
+				if(listSize == 7) {
+					for(int j = 0; j <= 6 - i; j++) {
 						Card removedCard2 = allCards.remove(0);
-						if(compareCardLists(allCards, bestCards) >= 0)
-							bestCards = new LinkedList<Card>(allCards);
+						int curVal = Evaluator.evaluateCards(allCards);
+						if(curVal > bestVal){
+							bestCardId1 = removedCard1.getId();
+							bestCardId2 = removedCard2.getId();
+							bestVal = curVal;
+							bestValFurther = Evaluator.evaluateFurther(allCards, bestVal);
+						} else if(curVal == bestVal) {
+							int furtherEval = Evaluator.evaluateFurther(allCards, curVal);
+							if(furtherEval > bestValFurther) {
+								bestCardId1 = removedCard1.getId();
+								bestCardId2 = removedCard2.getId();
+								bestVal = curVal;
+								bestValFurther = furtherEval;
+							}
+						}
 						allCards.add(removedCard2);
 					}
-				} else if(compareCardLists(allCards, bestCards) >= 0) {
-					bestCards = new LinkedList<Card>(allCards);
+				} 
+				// evaluating a 6 card hand
+				else {
+					int curVal = Evaluator.evaluateCards(allCards);
+					if(curVal > bestVal){
+						bestCardId1 = removedCard1.getId();
+						bestVal = curVal;
+						bestValFurther = Evaluator.evaluateFurther(allCards, bestVal);
+					} else if(curVal == bestVal) {
+						if(curVal == bestVal) {
+							int furtherEval = Evaluator.evaluateFurther(allCards, curVal);
+							if(furtherEval > bestValFurther) {
+								bestCardId1 = removedCard1.getId();
+								bestVal = curVal;
+								bestValFurther = furtherEval;
+							}
+						}
+					}
 				}
 				allCards.add(removedCard1);	// put card back at end of list
 			}
-		} 
-		return bestCards;
-	}
-	
-	private static int compareCardLists(List<Card> one, List<Card> two) {
-		int[] thisRank = Evaluator.evaluateCards(one);
-		int[] thatRank = Evaluator.evaluateCards(two);
-		
-		if(thisRank[0] < thatRank[0])
-			return -1;
-		else if(thisRank[0] > thatRank[0])
-			return 1;
-		// both hands are the same type. need to compare further
-		else {
-			if(thisRank[1] < thatRank[1])
-				return -1;
-			else if(thisRank[1] > thatRank[1])
-				return 1;
-			// same pair, trips, kicker, etc. need to find next highest card
-			else {
-				for(int i = 0; i < one.size(); i++) {
-					int thisCardRank = one.get(i).getRank();
-					int thatCardRank = two.get(i).getRank();
-					if(thisCardRank < thatCardRank)
-						return -1;
-					else if(thisCardRank > thatCardRank)
-						return 1;
-				}
-			}
+		}		
+		// remove the "worst" cards from the set
+		Iterator<Card> iter = allCards.iterator();
+		while(iter.hasNext()) {
+			int nextId = iter.next().getId();
+			if(nextId == bestCardId1 || nextId == bestCardId2)
+				iter.remove();
 		}
-		// fell through and hands are equivalent
-		return 0;
+		return allCards;
 	}
 
 	@Override
 	public int compareTo(Hand another) {
-		return compareCardLists(this.getBestCards(), another.getBestCards());
+		List<Card> thisCards = new LinkedList<Card>(communityCards);
+		List<Card> thatCards = new LinkedList<Card>(communityCards);
+		thisCards.addAll(myCards);
+		thatCards.addAll(another.getCards());
+		int thisRank = Evaluator.evaluateCards(thisCards);
+		int thatRank = Evaluator.evaluateCards(thatCards);
+		
+		if(thisRank < thatRank)
+			return -1;
+		else if(thisRank > thatRank)
+			return 1;
+		// both hands are the same type. need to compare further
+		else {
+			int further1 = Evaluator.evaluateFurther(thisCards, thisRank);
+			int further2 = Evaluator.evaluateFurther(thatCards, thatRank);
+			if(further1 < further2)
+				return -1;
+			else if(further1 > further2)
+				return 1;
+			else
+				return 0;
+		}
 	}
 }

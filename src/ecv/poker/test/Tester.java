@@ -56,8 +56,9 @@ public class Tester {
 			player.drawCard(new Card(cardIds[i]));
 		}
 		List<Card> cards = player.getHand().getBestCards();
-		int[] val = Evaluator.evaluateCards(cards);
-		Log.d("MyApp", (expectedValue == val[0]) + " " + val[0] + "," + val[1]);
+		int val = Evaluator.evaluateCards(cards);
+		int further = Evaluator.evaluateFurther(cards, val);
+		Log.d("MyApp", (expectedValue == val) + " " + val + ", " + further);
 		player.getHand().clear();
 	}
 }
