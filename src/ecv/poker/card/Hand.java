@@ -1,7 +1,7 @@
 package ecv.poker.card;
 
 import java.util.Iterator;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -20,7 +20,7 @@ public class Hand implements Comparable<Hand>{
 	private List<Card> communityCards;	// reference to community cards for game
 	
 	public Hand(List<Card> community) {
-		myCards = new LinkedList<Card>();
+		myCards = new ArrayList<Card>();
 		communityCards = community;
 	}
 	
@@ -54,7 +54,7 @@ public class Hand implements Comparable<Hand>{
 	 * @return List of up to 5 cards with greatest value
 	 */
 	public List<Card> getBestCards() {
-		List<Card> allCards = new LinkedList<Card>(communityCards);
+		List<Card> allCards = new ArrayList<Card>(communityCards);
 		allCards.addAll(myCards);
 		
 		int bestVal = -1, bestValFurther = -1;
@@ -65,11 +65,11 @@ public class Hand implements Comparable<Hand>{
 		if(listSize > 5) {
 			// remove a card from hand to evaluate 5 card hand
 			for(int i = 0; i < 6; i++) {
-				Card removedCard1 = allCards.remove(0);
+				Card removedCard1 = allCards.remove(i);
 				// evaluating 7 cards...need to remove another card
 				if(listSize == 7) {
-					for(int j = 0; j <= 6 - i; j++) {
-						Card removedCard2 = allCards.remove(0);
+					for(int j = 0; j < 6; j++) {
+						Card removedCard2 = allCards.remove(j);
 						int curVal = Evaluator.evaluateCards(allCards);
 						if(curVal > bestVal){
 							bestCardId1 = removedCard1.getId();
@@ -85,7 +85,7 @@ public class Hand implements Comparable<Hand>{
 								bestValFurther = furtherEval;
 							}
 						}
-						allCards.add(removedCard2);
+						allCards.add(j, removedCard2);
 					}
 				} 
 				// evaluating a 6 card hand
@@ -106,7 +106,7 @@ public class Hand implements Comparable<Hand>{
 						}
 					}
 				}
-				allCards.add(removedCard1);	// put card back at end of list
+				allCards.add(i, removedCard1);	// put card back at end of list
 			}
 		}		
 		// remove the "worst" cards from the set
@@ -121,8 +121,8 @@ public class Hand implements Comparable<Hand>{
 
 	@Override
 	public int compareTo(Hand another) {
-		List<Card> thisCards = new LinkedList<Card>(communityCards);
-		List<Card> thatCards = new LinkedList<Card>(communityCards);
+		List<Card> thisCards = new ArrayList<Card>(communityCards);
+		List<Card> thatCards = new ArrayList<Card>(communityCards);
 		thisCards.addAll(myCards);
 		thatCards.addAll(another.getCards());
 		int thisRank = Evaluator.evaluateCards(thisCards);

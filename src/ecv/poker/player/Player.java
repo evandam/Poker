@@ -2,7 +2,7 @@ package ecv.poker.player;
 
 import ecv.poker.card.Card;
 import ecv.poker.card.Hand;
-import ecv.poker.card.Game;
+import ecv.poker.game.Game;
 
 public class Player {
 	private int chips;

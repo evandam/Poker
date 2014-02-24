@@ -1,7 +1,7 @@
 package ecv.poker.card;
 
 import java.util.Collections;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -12,7 +12,7 @@ import java.util.List;
  */
 public class Deck {
 	
-	private List<Card> cards = new LinkedList<Card>();
+	private List<Card> cards = new ArrayList<Card>();
 	
 	public Deck() {
 		for (int i = 0; i < 4; i++) {

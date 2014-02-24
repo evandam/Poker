@@ -1,7 +1,7 @@
 package ecv.poker.card;
 
 import java.util.Collections;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -32,7 +32,7 @@ public class Evaluator {
 	public static int evaluateCards(List<Card> playerCards) {		
 		// first sort cards in descending order
 		// highest pairs will appear first and will save search time
-		List<Card> cards = new LinkedList<Card>(playerCards);
+		List<Card> cards = new ArrayList<Card>(playerCards);
 		Collections.sort(cards);
 		Collections.reverse(cards);
 		int cardsSize = cards.size();	// only calculate once here...used a lot...
@@ -70,7 +70,7 @@ public class Evaluator {
 	 * @return
 	 */
 	public static int evaluateFurther(List<Card> playerCards, int value) {
-		List<Card> cards = new LinkedList<Card>(playerCards);
+		List<Card> cards = new ArrayList<Card>(playerCards);
 		Collections.sort(cards);
 		Collections.reverse(cards);		
 		int cardsSize = cards.size();	// only calculate once

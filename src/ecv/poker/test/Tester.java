@@ -5,7 +5,7 @@ import java.util.List;
 import android.util.Log;
 import ecv.poker.card.Card;
 import ecv.poker.card.Evaluator;
-import ecv.poker.card.Game;
+import ecv.poker.game.Game;
 import ecv.poker.player.Player;
 
 /**
