@@ -77,7 +77,8 @@ public class EvaluationTest extends TestCase {
 		List<Card> cards = player.getHand().getBestCards();
 		int val = Evaluator.evaluateCards(cards);
 		int further = Evaluator.evaluateFurther(cards, val);
-		Log.d("PokerTest", val + ", " + further);
+		Log.d(this.getClass().getName(), "Expected: " + expectedValue + 
+				", actual: " + val + ", " + further);
 		assertEquals("Expected: " + expectedValue + ", actual: " + val,
 				expectedValue, val);
 	}
