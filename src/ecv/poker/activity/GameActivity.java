@@ -14,7 +14,7 @@ public class GameActivity extends Activity {
 		GameView gameView = new GameView(this);
 		gameView.setKeepScreenOn(true);
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
-		getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, 
+		getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
 				WindowManager.LayoutParams.FLAG_FULLSCREEN);
 		setContentView(gameView);
 	}

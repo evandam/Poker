@@ -1,8 +1,5 @@
 package ecv.poker.view;
 
-import ecv.poker.activity.GameActivity;
-import ecv.poker.test.Tester;
-import ecv.poker.R;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -10,113 +7,115 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.view.MotionEvent;
 import android.view.View;
+import ecv.poker.R;
+import ecv.poker.activity.GameActivity;
 
 public class TitleView extends View {
-	
+
 	private Context context;
-	private Bitmap 	titleGraphic, 
-					playButtonUp,
-					playButtonDown,
-					settingsButtonUp,
-					settingsButtonDown;
+	private Bitmap titleGraphic, playButtonUp, playButtonDown,
+			settingsButtonUp, settingsButtonDown;
 	private int screenW, screenH;
-	private int playButtonX, playButtonY,
-				settingsButtonX, settingsButtonY;
-	private boolean playButtonPressed,
-					settingsButtonPressed;
-	
+	private int playButtonX, playButtonY, settingsButtonX, settingsButtonY;
+	private boolean playButtonPressed, settingsButtonPressed;
+
 	public TitleView(Context context) {
 		super(context);
 		this.context = context;
-		titleGraphic = BitmapFactory.decodeResource(getResources(), 
+		titleGraphic = BitmapFactory.decodeResource(getResources(),
 				R.drawable.aces);
-		playButtonDown = BitmapFactory.decodeResource(getResources(), 
+		playButtonDown = BitmapFactory.decodeResource(getResources(),
 				R.drawable.play_button_down);
-		playButtonUp = BitmapFactory.decodeResource(getResources(), 
+		playButtonUp = BitmapFactory.decodeResource(getResources(),
 				R.drawable.play_button_up);
-		settingsButtonDown = BitmapFactory.decodeResource(getResources(), 
+		settingsButtonDown = BitmapFactory.decodeResource(getResources(),
 				R.drawable.settings_button_down);
-		settingsButtonUp = BitmapFactory.decodeResource(getResources(), 
+		settingsButtonUp = BitmapFactory.decodeResource(getResources(),
 				R.drawable.settings_button_up);
 	}
-	
+
 	@Override
 	public void onSizeChanged(int w, int h, int oldW, int oldH) {
 		super.onSizeChanged(w, h, oldW, oldH);
 		screenH = h;
 		screenW = w;
-		
-		// scale the title graphic for portrait/landscape - fill either width/height
-		if(screenW < screenH) {
-			float heightRatio = (float) titleGraphic.getHeight() / titleGraphic.getWidth();
+
+		// scale the title graphic for portrait/landscape
+		if (screenW < screenH) {
+			float heightRatio = (float) titleGraphic.getHeight()
+					/ titleGraphic.getWidth();
 			int newHeight = (int) (screenW * heightRatio);
-			titleGraphic = Bitmap.createScaledBitmap(titleGraphic, 
-					screenW, newHeight, false);
-		} else { 
-			float widthRatio = (float) titleGraphic.getWidth() / titleGraphic.getHeight();
+			titleGraphic = Bitmap.createScaledBitmap(titleGraphic, screenW,
+					newHeight, false);
+		} else {
+			float widthRatio = (float) titleGraphic.getWidth()
+					/ titleGraphic.getHeight();
 			int newWidth = (int) (screenH * widthRatio);
-			titleGraphic = Bitmap.createScaledBitmap(titleGraphic, 
-					newWidth, screenH, false);
+			titleGraphic = Bitmap.createScaledBitmap(titleGraphic, newWidth,
+					screenH, false);
 		}
-	
+
 		// set the position of the play button
 		playButtonX = (screenW - playButtonUp.getWidth()) / 2;
-		if(screenH > screenW)
+		if (screenH > screenW)
 			playButtonY = (int) (screenH * 0.7);
 		else
-			playButtonY = screenH - 2 * playButtonUp.getHeight() - 20;	// button heights + padding
+			playButtonY = screenH - 2 * playButtonUp.getHeight() - 20;
 		// set position of settings button - below play button
 		settingsButtonX = playButtonX;
-		settingsButtonY = playButtonY + playButtonUp.getHeight() + 10;	// 10px padding;
+		settingsButtonY = playButtonY + playButtonUp.getHeight() + 10;
 	}
-	
+
 	@Override
 	protected void onDraw(Canvas canvas) {
 		// draw the title image centered on screen
 		int titleX = (screenW - titleGraphic.getWidth()) / 2;
 		canvas.drawBitmap(titleGraphic, titleX, 0, null);
-		
-		if(playButtonPressed)
+
+		if (playButtonPressed)
 			canvas.drawBitmap(playButtonDown, playButtonX, playButtonY, null);
 		else
 			canvas.drawBitmap(playButtonUp, playButtonX, playButtonY, null);
-		
-		if(settingsButtonPressed)
-			canvas.drawBitmap(settingsButtonDown, settingsButtonX, settingsButtonY, null);
+
+		if (settingsButtonPressed)
+			canvas.drawBitmap(settingsButtonDown, settingsButtonX,
+					settingsButtonY, null);
 		else
-			canvas.drawBitmap(settingsButtonUp, settingsButtonX, settingsButtonY, null);
+			canvas.drawBitmap(settingsButtonUp, settingsButtonX,
+					settingsButtonY, null);
 	}
-	
+
 	@Override
 	public boolean onTouchEvent(MotionEvent evt) {
 		int action = evt.getAction();
 		int x = (int) evt.getX();
 		int y = (int) evt.getY();
-		
-		switch(action) {
+
+		switch (action) {
 		case MotionEvent.ACTION_DOWN:
 			// C.D. for play button
-			if(x > playButtonX && x < playButtonX + playButtonUp.getWidth()
-					&& y > playButtonY && y < playButtonY + playButtonUp.getHeight()) {
+			if (x > playButtonX && x < playButtonX + playButtonUp.getWidth()
+					&& y > playButtonY
+					&& y < playButtonY + playButtonUp.getHeight()) {
 				playButtonPressed = true;
 			}
 			// C.D. for settings button
-			else if(x > settingsButtonX && x < settingsButtonX + settingsButtonUp.getWidth()
-					&& y > settingsButtonY && y < settingsButtonY + settingsButtonUp.getHeight()) {
+			else if (x > settingsButtonX
+					&& x < settingsButtonX + settingsButtonUp.getWidth()
+					&& y > settingsButtonY
+					&& y < settingsButtonY + settingsButtonUp.getHeight()) {
 				settingsButtonPressed = true;
 			}
 			break;
 		case MotionEvent.ACTION_MOVE:
 			break;
 		case MotionEvent.ACTION_UP:
-			if(playButtonPressed) {
+			if (playButtonPressed) {
 				Intent gameIntent = new Intent(context, GameActivity.class);
 				context.startActivity(gameIntent);
 				playButtonPressed = false;
-			}
-			else if(settingsButtonPressed) {
+			} else if (settingsButtonPressed) {
 				// do something here
-				Tester.testEvaluations();
 				settingsButtonPressed = false;
 			}
 			break;
