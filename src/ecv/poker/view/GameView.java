@@ -15,6 +15,7 @@ public class GameView extends View {
 
 	public GameView(Context context) {
 		super(context);
+		setBackgroundColor(Color.BLACK);
 		redPaint = new Paint();
 		redPaint.setAntiAlias(true);
 		redPaint.setColor(Color.RED);

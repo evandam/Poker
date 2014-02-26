@@ -40,27 +40,17 @@ public class TitleView extends View {
 		screenH = h;
 		screenW = w;
 
-		// scale the title graphic for portrait/landscape
-		if (screenW < screenH) {
-			float heightRatio = (float) titleGraphic.getHeight()
-					/ titleGraphic.getWidth();
-			int newHeight = (int) (screenW * heightRatio);
-			titleGraphic = Bitmap.createScaledBitmap(titleGraphic, screenW,
-					newHeight, false);
-		} else {
-			float widthRatio = (float) titleGraphic.getWidth()
-					/ titleGraphic.getHeight();
-			int newWidth = (int) (screenH * widthRatio);
-			titleGraphic = Bitmap.createScaledBitmap(titleGraphic, newWidth,
-					screenH, false);
-		}
+		// scale the title graphic
+		float heightRatio = (float) titleGraphic.getHeight()
+				/ titleGraphic.getWidth();
+		int newHeight = (int) (screenW * heightRatio);
+		titleGraphic = Bitmap.createScaledBitmap(titleGraphic, screenW,
+				newHeight, false);
 
 		// set the position of the play button
 		playButtonX = (screenW - playButtonUp.getWidth()) / 2;
-		if (screenH > screenW)
-			playButtonY = (int) (screenH * 0.7);
-		else
-			playButtonY = screenH - 2 * playButtonUp.getHeight() - 20;
+		playButtonY = (int) (screenH * 0.7);
+
 		// set position of settings button - below play button
 		settingsButtonX = playButtonX;
 		settingsButtonY = playButtonY + playButtonUp.getHeight() + 10;

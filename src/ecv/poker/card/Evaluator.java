@@ -24,10 +24,10 @@ public class Evaluator {
 	 * @param playerCards
 	 * @return int 0-8 representing type of hand (two pair, flush, etc),
 	 */
-	public static int evaluateCards(List<Card> playerCards) {
+	public static int evaluateCards(List<Card> c) {
 		// first sort cards in descending order
 		// highest pairs will appear first and will save search time
-		List<Card> cards = new ArrayList<Card>(playerCards);
+		List<Card> cards = new ArrayList<Card>(c);
 		Collections.sort(cards);
 		Collections.reverse(cards);
 		int cardsSize = cards.size(); // only calculate once here
@@ -64,7 +64,7 @@ public class Evaluator {
 	 * @param cards
 	 *            to evaluate
 	 * @param value
-	 *            determined from evaluateCards - saves calculating twice
+	 *            determined from evaluateCards - avoids calculating twice
 	 * @return
 	 */
 	public static int evaluateFurther(List<Card> playerCards, int value) {
@@ -78,7 +78,7 @@ public class Evaluator {
 		// flushes and no-hands may require evaluating each card in the hand
 		if (value == HIGH_CARD || value == FLUSH) {
 			// put each card in descending order in an int, each card getting 2
-			// digits
+			// digits. For example, 1413121109 would be A-J and a 9.
 			for (int i = 0; i < cardsSize; i++) {
 				returnVal += cards.get(i).getRank() * Math.pow(100, 4 - i);
 			}
@@ -214,7 +214,6 @@ public class Evaluator {
 	private static boolean isTwoPair(List<Card> cards, int cardsSize) {
 		if (cardsSize >= 4) {
 			boolean onePairFound = false;
-			// can ignore the first 2 cards (would be highPair)
 			for (int i = 1; i < cardsSize; i++) {
 				if (cards.get(i - 1).getRank() == cards.get(i).getRank()) {
 					if (!onePairFound)
@@ -265,8 +264,8 @@ public class Evaluator {
 				}
 			}
 			return isStraight;
-		} else
-			return false;
+		} 
+		return false;
 	}
 
 	// all cards have same suit
@@ -278,7 +277,7 @@ public class Evaluator {
 					return false;
 			}
 			return true;
-		}
+		} 
 		return false;
 	}
 
