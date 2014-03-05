@@ -74,7 +74,7 @@ public class EvaluationTest extends TestCase {
 		for (int i = 0; i < cardIds.length; i++) {
 			player.drawCard(new Card(cardIds[i]));
 		}
-		List<Card> cards = player.getHand().getBestCards();
+		List<Card> cards = Evaluator.getBestCards(player.getHand());
 		int val = Evaluator.evaluateCards(cards);
 		int further = Evaluator.evaluateFurther(cards, val);
 		Log.d(this.getClass().getName(), "Expected: " + expectedValue + 

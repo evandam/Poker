@@ -1,11 +1,12 @@
 package ecv.poker.card;
 
-import java.util.Collections;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
- * List of 52 cards Some functionality taken from Crazy Eights
+ * List of standard 52 cards, along with
+ * convenient methods to shuffle, deal, and add to the deck.
  * 
  * @author Evan
  */
@@ -14,13 +15,20 @@ public class Deck {
 	private List<Card> cards = new ArrayList<Card>(52);
 
 	public Deck() {
-		for (int i = 0; i < 4; i++) {
-			for (int j = 102; j < 115; j++) {
-				int id = j + (i * 100);
-				Card card = new Card(id);
-				cards.add(card);
+		for (int i = 1; i <= 4; i++) {
+			for (int j = 2; j <= 14; j++) {
+				int id = i * 100 + j;
+				cards.add(new Card(id));
 			}
 		}
+	}
+	
+	/**
+	 *  
+	 * @return list of all cards in deck
+	 */
+	public List<Card> getCards() {
+		return cards;
 	}
 
 	/**
@@ -33,21 +41,18 @@ public class Deck {
 	/**
 	 * @return Card from top of deck
 	 */
-	public Card dealCard() {
-		return cards.remove(0);
+	public Card deal() {
+		return cards.remove(cards.size() - 1);
 	}
 
 	/**
-	 * Bring the cards from the hand back to the deck
+	 * Add list of cards to the deck
 	 * 
 	 * @param myCards
 	 * @param computerCards
 	 * @param communityCards
 	 */
-	public void returnCards(List<Card> myCards, List<Card> computerCards,
-			List<Card> communityCards) {
-		cards.addAll(myCards);
-		cards.addAll(computerCards);
-		cards.addAll(communityCards);
+	public void add(List<Card> toAdd) {
+		cards.addAll(toAdd);
 	}
 }

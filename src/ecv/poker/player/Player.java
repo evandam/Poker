@@ -1,5 +1,7 @@
 package ecv.poker.player;
 
+import java.util.List;
+
 import ecv.poker.card.Card;
 import ecv.poker.card.Hand;
 import ecv.poker.game.Game;
@@ -30,12 +32,11 @@ public class Player {
 	public Hand getHand() {
 		return hand;
 	}
+	
+	public List<Card> getHoleCards() {
+		return hand.getHoleCards();
+	}
 
-	/**
-	 * Add a card dealt from the deck
-	 * 
-	 * @param card
-	 */
 	public void drawCard(Card card) {
 		hand.add(card);
 	}

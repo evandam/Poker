@@ -13,10 +13,12 @@ import ecv.poker.activity.GameActivity;
 public class TitleView extends View {
 
 	private Context context;
-	private Bitmap titleGraphic, playButtonUp, playButtonDown,
-			settingsButtonUp, settingsButtonDown;
+	private Bitmap titleGraphic;
+	private Bitmap playButtonUp, playButtonDown;
+	private Bitmap settingsButtonUp, settingsButtonDown;
 	private int screenW, screenH;
-	private int playButtonX, playButtonY, settingsButtonX, settingsButtonY;
+	private int playButtonX, playButtonY; 
+	private int settingsButtonX, settingsButtonY;
 	private boolean playButtonPressed, settingsButtonPressed;
 
 	public TitleView(Context context) {
@@ -41,26 +43,23 @@ public class TitleView extends View {
 		screenW = w;
 
 		// scale the title graphic
-		float heightRatio = (float) titleGraphic.getHeight()
-				/ titleGraphic.getWidth();
-		int newHeight = (int) (screenW * heightRatio);
 		titleGraphic = Bitmap.createScaledBitmap(titleGraphic, screenW,
-				newHeight, false);
+				screenW * titleGraphic.getHeight() / titleGraphic.getWidth(), false);
 
+		// set position of settings button
+		settingsButtonX = (screenW - playButtonUp.getWidth()) / 2;
+		settingsButtonY = 3 * screenH / 4;
 		// set the position of the play button
-		playButtonX = (screenW - playButtonUp.getWidth()) / 2;
-		playButtonY = (int) (screenH * 0.7);
+		playButtonX = settingsButtonX;
+		playButtonY = settingsButtonY - playButtonDown.getHeight() - 10;
 
-		// set position of settings button - below play button
-		settingsButtonX = playButtonX;
-		settingsButtonY = playButtonY + playButtonUp.getHeight() + 10;
+		
 	}
 
 	@Override
 	protected void onDraw(Canvas canvas) {
-		// draw the title image centered on screen
-		int titleX = (screenW - titleGraphic.getWidth()) / 2;
-		canvas.drawBitmap(titleGraphic, titleX, 0, null);
+		// draw the title image
+		canvas.drawBitmap(titleGraphic, 0, 0, null);
 
 		if (playButtonPressed)
 			canvas.drawBitmap(playButtonDown, playButtonX, playButtonY, null);

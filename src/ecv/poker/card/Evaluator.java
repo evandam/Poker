@@ -2,9 +2,8 @@ package ecv.poker.card;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
-
-import ecv.poker.card.Card.Suit;
 
 /**
  * Utility class to evaluate a player's hand. Must have at least 2 cards in
@@ -19,6 +18,81 @@ public class Evaluator {
 			STRAIGHT_FLUSH = 8;
 
 	/**
+	 * If the hand is made of more than 5 cards, The best hand must be found.
+	 * 
+	 * @return List of up to 5 cards with greatest value
+	 */
+	public static List<Card> getBestCards(Hand hand) {
+		List<Card> allCards = new ArrayList<Card>(hand.getCommunityCards());
+		allCards.addAll(hand.getHoleCards());
+
+		int bestVal = -1, bestValFurther = -1;
+		int bestCardId1 = -1, bestCardId2 = -1;
+
+		int listSize = allCards.size();
+		// make a 5 card hand by removing all combinations of 2 cards
+		if (listSize > 5) {
+			// remove a card from hand to evaluate 5 card hand
+			for (int i = 0; i < 6; i++) {
+				Card removedCard1 = allCards.remove(i);
+				// evaluating 7 cards...need to remove another card
+				if (listSize == 7) {
+					for (int j = 0; j < 6; j++) {
+						Card removedCard2 = allCards.remove(j);
+						int curVal = Evaluator.evaluateCards(allCards);
+						if (curVal > bestVal) {
+							bestCardId1 = removedCard1.getId();
+							bestCardId2 = removedCard2.getId();
+							bestVal = curVal;
+							bestValFurther = Evaluator.evaluateFurther(
+									allCards, bestVal);
+						} else if (curVal == bestVal) {
+							int furtherEval = Evaluator.evaluateFurther(
+									allCards, curVal);
+							if (furtherEval > bestValFurther) {
+								bestCardId1 = removedCard1.getId();
+								bestCardId2 = removedCard2.getId();
+								bestVal = curVal;
+								bestValFurther = furtherEval;
+							}
+						}
+						allCards.add(j, removedCard2);
+					}
+				}
+				// evaluating a 6 card hand
+				else {
+					int curVal = Evaluator.evaluateCards(allCards);
+					if (curVal > bestVal) {
+						bestCardId1 = removedCard1.getId();
+						bestVal = curVal;
+						bestValFurther = Evaluator.evaluateFurther(allCards,
+								bestVal);
+					} else if (curVal == bestVal) {
+						if (curVal == bestVal) {
+							int furtherEval = Evaluator.evaluateFurther(
+									allCards, curVal);
+							if (furtherEval > bestValFurther) {
+								bestCardId1 = removedCard1.getId();
+								bestVal = curVal;
+								bestValFurther = furtherEval;
+							}
+						}
+					}
+				}
+				allCards.add(i, removedCard1); // put card back at end of list
+			}
+		}
+		// remove the "worst" cards from the set
+		Iterator<Card> iter = allCards.iterator();
+		while (iter.hasNext()) {
+			int nextId = iter.next().getId();
+			if (nextId == bestCardId1 || nextId == bestCardId2)
+				iter.remove();
+		}
+		return allCards;
+	}
+	
+	/**
 	 * Attempt to rank the 5 card hand.
 	 * 
 	 * @param playerCards
@@ -30,26 +104,24 @@ public class Evaluator {
 		List<Card> cards = new ArrayList<Card>(c);
 		Collections.sort(cards);
 		Collections.reverse(cards);
-		int cardsSize = cards.size(); // only calculate once here
-
 		int returnVal;
 
 		// check if the cards meet criteria of a hand value
-		if (isStraightFlush(cards, cardsSize)) {
+		if (isStraightFlush(cards)) {
 			returnVal = STRAIGHT_FLUSH;
-		} else if (isQuads(cards, cardsSize)) {
+		} else if (isQuads(cards)) {
 			returnVal = QUADS;
-		} else if (isFullHouse(cards, cardsSize)) {
+		} else if (isFullHouse(cards)) {
 			returnVal = FULL_HOUSE;
-		} else if (isFlush(cards, cardsSize)) {
+		} else if (isFlush(cards)) {
 			returnVal = FLUSH;
-		} else if (isStraight(cards, cardsSize)) {
+		} else if (isStraight(cards)) {
 			returnVal = STRAIGHT;
-		} else if (isTrips(cards, cardsSize)) {
+		} else if (isTrips(cards)) {
 			returnVal = TRIPS;
-		} else if (isTwoPair(cards, cardsSize)) {
+		} else if (isTwoPair(cards)) {
 			returnVal = TWO_PAIR;
-		} else if (isPair(cards, cardsSize)) {
+		} else if (isPair(cards)) {
 			returnVal = ONE_PAIR;
 		} else {
 			returnVal = HIGH_CARD;
@@ -200,9 +272,9 @@ public class Evaluator {
 	 */
 
 	// two cards of same rank
-	private static boolean isPair(List<Card> cards, int cardsSize) {
+	private static boolean isPair(List<Card> cards) {
 		int curRank;
-		for (int i = 1; i < cardsSize; i++) {
+		for (int i = 1; i < cards.size(); i++) {
 			curRank = cards.get(i).getRank();
 			if (cards.get(i - 1).getRank() == curRank)
 				return true;
@@ -211,10 +283,10 @@ public class Evaluator {
 	}
 
 	// two sets of two cards of same rank
-	private static boolean isTwoPair(List<Card> cards, int cardsSize) {
-		if (cardsSize >= 4) {
+	private static boolean isTwoPair(List<Card> cards) {
+		if (cards.size() >= 4) {
 			boolean onePairFound = false;
-			for (int i = 1; i < cardsSize; i++) {
+			for (int i = 1; i < cards.size(); i++) {
 				if (cards.get(i - 1).getRank() == cards.get(i).getRank()) {
 					if (!onePairFound)
 						onePairFound = true;
@@ -227,11 +299,11 @@ public class Evaluator {
 	}
 
 	// three of same rank
-	private static boolean isTrips(List<Card> cards, int cardsSize) {
-		if (cardsSize >= 3) {
+	private static boolean isTrips(List<Card> cards) {
+		if (cards.size() >= 3) {
 			// compare first 3 cards to next 2
 			int curI, curJ;
-			for (int i = 0; i < cardsSize - 2; i++) {
+			for (int i = 0; i < cards.size() - 2; i++) {
 				curI = cards.get(i).getRank();
 				boolean isTrips = true;
 				for (int j = i + 1; j < i + 3; j++) {
@@ -249,11 +321,11 @@ public class Evaluator {
 
 	// cards are in consecutive order (hand in descending order)
 	// ace can be used as low card - A5432 is a straight
-	private static boolean isStraight(List<Card> cards, int cardsSize) {
-		if (cardsSize == 5) {
+	private static boolean isStraight(List<Card> cards) {
+		if (cards.size() == 5) {
 			boolean isStraight = true;
 			int curRank;
-			for (int i = 1; i < cardsSize && isStraight; i++) {
+			for (int i = 1; i < 5 && isStraight; i++) {
 				curRank = cards.get(i).getRank();
 				if (curRank + 1 != cards.get(i - 1).getRank()) {
 					isStraight = false;
@@ -269,10 +341,10 @@ public class Evaluator {
 	}
 
 	// all cards have same suit
-	private static boolean isFlush(List<Card> cards, int cardsSize) {
-		if (cardsSize == 5) {
-			Suit suit = cards.get(0).getSuit();
-			for (int i = 1; i < cardsSize; i++) {
+	private static boolean isFlush(List<Card> cards) {
+		if (cards.size() == 5) {
+			int suit = cards.get(0).getSuit();
+			for (int i = 1; i < 5; i++) {
 				if (cards.get(i).getSuit() != suit)
 					return false;
 			}
@@ -282,8 +354,8 @@ public class Evaluator {
 	}
 
 	// trips and a pair
-	private static boolean isFullHouse(List<Card> cards, int cardsSize) {
-		if (cardsSize == 5) {
+	private static boolean isFullHouse(List<Card> cards) {
+		if (cards.size() == 5) {
 			// first two cards are a pair
 			int firstRank = cards.get(0).getRank();
 			if (firstRank == cards.get(1).getRank()) {
@@ -303,11 +375,11 @@ public class Evaluator {
 	}
 
 	// four of the same rank
-	private static boolean isQuads(List<Card> cards, int cardsSize) {
-		if (cardsSize >= 4) {
+	private static boolean isQuads(List<Card> cards) {
+		if (cards.size() >= 4) {
 			int curI, curJ;
 			// compare first 2 cards to next 3
-			for (int i = 0; i < cardsSize - 3; i++) {
+			for (int i = 0; i < cards.size() - 3; i++) {
 				curI = cards.get(i).getRank();
 				boolean isQuads = true;
 				for (int j = i + 1; j < i + 4; j++) {
@@ -323,7 +395,7 @@ public class Evaluator {
 	}
 
 	// hand is a flush and a straight
-	private static boolean isStraightFlush(List<Card> cards, int cardsSize) {
-		return isFlush(cards, cardsSize) && isStraight(cards, cardsSize);
+	private static boolean isStraightFlush(List<Card> cards) {
+		return isFlush(cards) && isStraight(cards);
 	}
 }
