@@ -42,15 +42,14 @@ public class Deck {
 	 * @return Card from top of deck
 	 */
 	public Card deal() {
+		// removing last element from arraylist is most efficient
 		return cards.remove(cards.size() - 1);
 	}
 
 	/**
 	 * Add list of cards to the deck
 	 * 
-	 * @param myCards
-	 * @param computerCards
-	 * @param communityCards
+	 * @param toAdd
 	 */
 	public void add(List<Card> toAdd) {
 		cards.addAll(toAdd);

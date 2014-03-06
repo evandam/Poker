@@ -41,20 +41,18 @@ public class Hand implements Comparable<Hand> {
 	public int compareTo(Hand another) {
 		List<Card> thisCards = Evaluator.getBestCards(this);
 		List<Card> thatCards = Evaluator.getBestCards(another);
-		int thisRank = Evaluator.evaluateCards(thisCards);
-		int thatRank = Evaluator.evaluateCards(thatCards);
+		int[] thisRank = Evaluator.evaluateCards(thisCards);
+		int[] thatRank = Evaluator.evaluateCards(thatCards);
 
-		if (thisRank < thatRank)
+		if (thisRank[0] < thatRank[0])
 			return -1;
-		else if (thisRank > thatRank)
+		else if (thisRank[0] > thatRank[0])
 			return 1;
 		// both hands are the same type. need to compare further
 		else {
-			int further1 = Evaluator.evaluateFurther(thisCards, thisRank);
-			int further2 = Evaluator.evaluateFurther(thatCards, thatRank);
-			if (further1 < further2)
+			if (thisRank[1] < thatRank[1])
 				return -1;
-			else if (further1 > further2)
+			else if (thisRank[1] > thatRank[1])
 				return 1;
 			else
 				return 0;
