@@ -26,57 +26,65 @@ public class EvaluationTest extends TestCase {
 
 	public void testHighCard() {
 		int[] cardIds = new int[] { 202, 303, 404, 106, 307, 109, 208 };
-		evaluateHand(cardIds, Evaluator.HIGH_CARD, 908070604);
+		int rank = 0x98764;
+		evaluateHand(cardIds, rank);
 	}
 
 	public void testOnePair() {
 		int[] cardIds = new int[] { 202, 310, 307, 306, 311, 103, 210 };
-		evaluateHand(cardIds, Evaluator.ONE_PAIR, 10110706);
+		int rank = 0x10AB76;
+		evaluateHand(cardIds, rank);
 	}
 
 	public void testTwoPair() {
 		int[] cardIds = new int[] { 202, 310, 302, 306, 311, 110, 208 };
-		evaluateHand(cardIds, Evaluator.TWO_PAIR, 100211);
+		int rank = 0x200A2B;
+		evaluateHand(cardIds, rank);
 	}
 
 	public void testTrips() {
 		int[] cardIds = new int[] { 202, 310, 302, 306, 311, 102, 208 };
-		evaluateHand(cardIds, Evaluator.TRIPS, 21110);
+		int rank = 0x3002BA;
+		evaluateHand(cardIds, rank);
 	}
 
 	public void testStraight() {
 		int[] cardIds = new int[] { 113, 210, 302, 306, 311, 114, 312 };
-		evaluateHand(cardIds, Evaluator.STRAIGHT, 14);
+		int rank = 0x40000E;
+		evaluateHand(cardIds, rank);
 	}
 
 	public void testFlush() {
 		int[] cardIds = new int[] { 313, 310, 302, 306, 311, 114, 308 };
-		evaluateHand(cardIds, Evaluator.FLUSH, 1311100806);
+		int rank = 0x5DBA86;
+		evaluateHand(cardIds, rank);
 	}
 
 	public void testFullHouse() {
 		int[] cardIds = new int[] { 110, 102, 210, 104, 310, 102, 404 };
-		evaluateHand(cardIds, Evaluator.FULL_HOUSE, 1004);
+		int rank = 0x6000A4;
+		evaluateHand(cardIds, rank);
 	}
 
 	public void testQuads() {
 		int[] cardIds = new int[] { 110, 102, 210, 104, 310, 106, 410 };
-		evaluateHand(cardIds, Evaluator.QUADS, 1006);
+		int rank = 0x7000A6;
+		evaluateHand(cardIds, rank);
 	}
 
 	public void testStraightFlush() {
 		int[] cardIds = new int[] { 114, 102, 103, 104, 105, 106, 107 };
-		evaluateHand(cardIds, Evaluator.STRAIGHT_FLUSH, 14);
+		int rank = 0x800007;
+		evaluateHand(cardIds, rank);
 	}
 
-	private void evaluateHand(int[] cardIds, int expectedVal1, int expectedVal2) {
+	private void evaluateHand(int[] cardIds, int expectedVal) {
 		for (int i = 0; i < cardIds.length; i++) {
 			player.drawCard(new Card(cardIds[i]));
 		}
 		List<Card> cards = Evaluator.getBestCards(player.getHand());
-		int[] val = Evaluator.evaluateCards(cards);
-		assertEquals(expectedVal1, val[0]);
-		assertEquals(expectedVal2, val[1]);
+		int val = Evaluator.evaluateCards(cards);
+		assertEquals(expectedVal, val);
 	}
 
 }
