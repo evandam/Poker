@@ -5,8 +5,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Utility class to evaluate a player's hand. Must have at least 2 cards in
- * hand, no more than 5. Use Hand.java's getBestCards
+ * Utility class to evaluate a player's hand. 
  * 
  * @author Evan
  * 
@@ -20,7 +19,9 @@ public class Evaluator {
 	private static final int rank_pos = 0x100000;
 	
 	/**
-	 * If the hand is made of more than 5 cards, The best hand must be found.
+	 * If the hand being evaluated is made of more than 5 cards, 
+	 * The best hand must be found by checking each combination possible.
+	 * 
 	 * This may be able to be applied to calculate the player's "outs,"
 	 * Or how many cards in the remaining deck can be used to complete his hand.
 	 * 
@@ -72,14 +73,21 @@ public class Evaluator {
 	}
 
 	/**
-	 * Attempt to rank the hand (at least 2 cards, no more than 5).
-	 * Hopefully this can be used to some extent during a game,
-	 * where a full 5 cards may not be available.
+	 * Get an evaluation of the cards that can be compared to others.
+	 * The size of the list of cards must be no more than 5 cards.
+	 * It can be less than 5, so this function can be used in the
+	 * middle of a round.
+	 * 
+	 * The returned value is a hexadecimal value with 6 digits. 
+	 * The most significant digit always corresponds to the class constants,
+	 * indicating if the cards make a flush, straight, two-pair, etc.
+	 * 
+	 * Subsequent digits depend on what that previous digit is.
+	 * They may indicate the rank of a pair, followed by kickers, 
+	 * The rank that a straight goes up to, and so on.
 	 * 
 	 * @param playerCards
-	 * @return an int that occupies 6 hex digits.
-	 *  The highest digit represents the hand rank (flush, straight, pair)
-	 *  And subsequent digits relate to the value of pairs, kickers, etc.
+	 * @return an evaluation of the cards as an integer
 	 */
 	public static int evaluateCards(List<Card> c) {
 		// first sort cards in descending order
