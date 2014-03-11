@@ -27,13 +27,13 @@ public class TitleView extends View {
 		titleGraphic = BitmapFactory.decodeResource(getResources(),
 				R.drawable.aces);
 		playButtonDown = BitmapFactory.decodeResource(getResources(),
-				R.drawable.play_button_down);
+				R.drawable.custom_play_button_down);
 		playButtonUp = BitmapFactory.decodeResource(getResources(),
-				R.drawable.play_button_up);
+				R.drawable.custom_play_button_up);
 		settingsButtonDown = BitmapFactory.decodeResource(getResources(),
-				R.drawable.settings_button_down);
+				R.drawable.custom_settings_button_down);
 		settingsButtonUp = BitmapFactory.decodeResource(getResources(),
-				R.drawable.settings_button_up);
+				R.drawable.custom_settings_button_up);
 	}
 
 	@Override
@@ -42,16 +42,21 @@ public class TitleView extends View {
 		screenH = h;
 		screenW = w;
 
-		// scale the title graphic
-		titleGraphic = Bitmap.createScaledBitmap(titleGraphic, screenW,
-				screenW * titleGraphic.getHeight() / titleGraphic.getWidth(), false);
-
-		// set position of settings button
-		settingsButtonX = (screenW - playButtonUp.getWidth()) / 2;
-		settingsButtonY = 3 * screenH / 4;
-		// set the position of the play button
-		playButtonX = settingsButtonX;
-		playButtonY = settingsButtonY - playButtonDown.getHeight() - 10;
+		// scale the title graphic and buttons
+		titleGraphic = Bitmap.createScaledBitmap(titleGraphic, 
+				screenH / 2 * titleGraphic.getWidth() / titleGraphic.getHeight(), screenH / 2, false);
+		int buttonH = screenH / 7;
+		int buttonW = buttonH * playButtonUp.getWidth() / playButtonUp.getHeight();
+		playButtonUp = Bitmap.createScaledBitmap(playButtonUp, buttonW, buttonH, false);
+		playButtonDown = Bitmap.createScaledBitmap(playButtonDown, buttonW, buttonH, false);
+		settingsButtonUp = Bitmap.createScaledBitmap(settingsButtonUp, buttonW, buttonH, false);
+		settingsButtonDown = Bitmap.createScaledBitmap(settingsButtonDown, buttonW, buttonH, false);
+		
+		// set the position of the buttons
+		playButtonX = (screenW - buttonW) / 2;
+		playButtonY = screenH / 2 + 50;
+		settingsButtonX = playButtonX;
+		settingsButtonY = playButtonY + buttonH + 20;
 
 		
 	}
@@ -59,7 +64,7 @@ public class TitleView extends View {
 	@Override
 	protected void onDraw(Canvas canvas) {
 		// draw the title image
-		canvas.drawBitmap(titleGraphic, 0, 0, null);
+		canvas.drawBitmap(titleGraphic, screenW / 2 - titleGraphic.getWidth() / 2, 0, null);
 
 		if (playButtonPressed)
 			canvas.drawBitmap(playButtonDown, playButtonX, playButtonY, null);

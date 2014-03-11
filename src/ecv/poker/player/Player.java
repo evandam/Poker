@@ -1,18 +1,23 @@
 package ecv.poker.player;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import ecv.poker.card.Card;
-import ecv.poker.card.Hand;
 import ecv.poker.game.Game;
 
+/*
+ * TODO: abstract this to user and computer players?
+ */
 public class Player {
 	private int chips;
-	private Hand hand;
+	private List<Card> cards;
+	private Game game;
 
 	public Player(Game game) {
+		this.game = game;
 		chips = 1000; // or some default number?
-		hand = new Hand(game.getCommunityCards());
+		cards = new ArrayList<Card>(2);
 	}
 
 	/**
@@ -23,21 +28,62 @@ public class Player {
 	}
 
 	/**
-	 * @param i number of chips to be added or deducted from player
+	 * @param i
+	 *            number of chips to be added or deducted from player
 	 */
 	public void addChips(int i) {
 		chips += i;
 	}
 
-	public Hand getHand() {
-		return hand;
-	}
-	
-	public List<Card> getHoleCards() {
-		return hand.getHoleCards();
+	/**
+	 * Put player's chips into pot if they have enough to cover the bet.
+	 * 
+	 * @param number
+	 *            of chips to bet
+	 */
+	public void bet(int bet) {
+		if (chips >= bet) {
+			chips -= bet;
+			game.addToPot(bet);
+		}
 	}
 
-	public void drawCard(Card card) {
-		hand.add(card);
+	/**
+	 * Call the current bet. If it is more than the player has, put them all in.
+	 * Note that a "check" is the equivalent of calling 0.
+	 * @param bet
+	 */
+	public void call(int bet) {
+		if(chips > bet) {
+			game.addToPot(bet);
+			chips -= bet;			
+		} else {
+			game.addToPot(chips);
+			chips = 0;
+		}
+	}
+
+	/**
+	 * Throw away player's cards. Ends hand assuming 2 players
+	 */
+	public void fold() {
+		cards.clear();
+	}
+
+	/**
+	 * @return the player's hole cards
+	 */
+	public List<Card> getCards() {
+		return cards;
+	}
+
+	/**
+	 * 
+	 * @param i
+	 *            index of card to get
+	 * @return the card in the player's hand
+	 */
+	public Card getCard(int i) {
+		return cards.get(i);
 	}
 }

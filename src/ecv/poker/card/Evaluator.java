@@ -19,63 +19,9 @@ public class Evaluator {
 	private static final int rank_pos = 0x100000;
 	
 	/**
-	 * If the hand being evaluated is made of more than 5 cards, 
-	 * The best hand must be found by checking each combination possible.
-	 * 
-	 * This may be able to be applied to calculate the player's "outs,"
-	 * Or how many cards in the remaining deck can be used to complete his hand.
-	 * 
-	 * @param hand to get best cards for
-	 * @return List of up to 5 cards with greatest value
-	 */
-	public static List<Card> getBestCards(Hand hand) {
-		List<Card> allCards = new ArrayList<Card>();
-		allCards.addAll(hand.getCommunityCards());
-		allCards.addAll(hand.getHoleCards());
-		int[] bestIndexes = new int[5];
-		int bestVal = 0;
-
-		List<Card> combination = new ArrayList<Card>(5);
-		while (combination.size() < 5)
-			combination.add(null);
-		// create each possible combination of 5 card hands and get the highest
-		// ranked one
-		for (int i = 0; i < allCards.size() - 4; i++) {
-			combination.set(0, allCards.get(i));
-			for (int j = i + 1; j < allCards.size() - 3; j++) {
-				combination.set(1, allCards.get(j));
-				for (int k = j + 1; k < allCards.size() - 2; k++) {
-					combination.set(2, allCards.get(k));
-					for (int l = k + 1; l < allCards.size() - 1; l++) {
-						combination.set(3, allCards.get(l));
-						for (int m = l + 1; m < allCards.size(); m++) {
-							combination.set(4, allCards.get(m));
-							int curVal = evaluateCards(combination);
-							if (curVal > bestVal) {
-								bestVal = curVal;
-								bestIndexes[0] = i;
-								bestIndexes[1] = j;
-								bestIndexes[2] = k;
-								bestIndexes[3] = l;
-								bestIndexes[4] = m;
-							}
-						}
-					}
-				}
-			}
-		}
-		// compile the best list of cards and return
-		List<Card> bestCards = new ArrayList<Card>(5);
-		for (int i = 0; i < bestIndexes.length; i++) {
-			bestCards.add(allCards.get(bestIndexes[i]));
-		}
-		return bestCards;
-	}
-
-	/**
 	 * Get an evaluation of the cards that can be compared to others.
-	 * The size of the list of cards must be no more than 5 cards.
-	 * It can be less than 5, so this function can be used in the
+	 * The best combination of cards is found if more than 5 are in the list.
+	 * The list can be less than 5, so this function can be used in the
 	 * middle of a round.
 	 * 
 	 * The returned value is a hexadecimal value with 6 digits. 
@@ -89,13 +35,14 @@ public class Evaluator {
 	 * @param playerCards
 	 * @return an evaluation of the cards as an integer
 	 */
-	public static int evaluateCards(List<Card> c) {
+	public static int evaluate(List<Card> cards) {
 		// first sort cards in descending order
 		// highest pairs will appear first and will save search time
-		List<Card> cards = new ArrayList<Card>(c);
 		Collections.sort(cards);
 		Collections.reverse(cards);
-
+		if(cards.size() > 5) 
+			cards = getBestCards(cards);
+	
 		int val = 0;
 		if((val = getStraightFlush(cards))  > 0) {
 			return val;
@@ -118,7 +65,54 @@ public class Evaluator {
 		}
 	}
 
-	
+	/**
+	 * If the hand being evaluated is made of more than 5 cards, 
+	 * The best hand must be found by checking each combination possible.
+	 * 
+	 * @param cards 
+	 * @return List of up to 5 cards with greatest value
+	 */
+	private static List<Card> getBestCards(List<Card> cards) {
+		int[] bestIndexes = new int[5];
+		int bestVal = 0;
+
+		List<Card> combination = new ArrayList<Card>(5);
+		while (combination.size() < 5)
+			combination.add(null);
+		// create each possible combination of 5 card hands and get the highest
+		// ranked one
+		for (int i = 0; i < cards.size() - 4; i++) {
+			combination.set(0, cards.get(i));
+			for (int j = i + 1; j < cards.size() - 3; j++) {
+				combination.set(1, cards.get(j));
+				for (int k = j + 1; k < cards.size() - 2; k++) {
+					combination.set(2, cards.get(k));
+					for (int l = k + 1; l < cards.size() - 1; l++) {
+						combination.set(3, cards.get(l));
+						for (int m = l + 1; m < cards.size(); m++) {
+							combination.set(4, cards.get(m));
+							int curVal = evaluate(combination);
+							if (curVal > bestVal) {
+								bestVal = curVal;
+								bestIndexes[0] = i;
+								bestIndexes[1] = j;
+								bestIndexes[2] = k;
+								bestIndexes[3] = l;
+								bestIndexes[4] = m;
+							}
+						}
+					}
+				}
+			}
+		}
+		// compile the best list of cards and return
+		List<Card> bestCards = new ArrayList<Card>(5);
+		for (int i : bestIndexes) {
+			bestCards.add(cards.get(i));
+		}
+		return bestCards;
+	}
+
 	/**
 	 * 
 	 * @param cards

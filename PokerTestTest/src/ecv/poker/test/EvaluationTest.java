@@ -1,7 +1,5 @@
 package ecv.poker.test;
 
-import java.util.List;
-
 import junit.framework.TestCase;
 import ecv.poker.card.Card;
 import ecv.poker.card.Evaluator;
@@ -21,7 +19,7 @@ public class EvaluationTest extends TestCase {
 	
 	protected void tearDown() throws Exception {
 		super.tearDown();
-		player.getHand().clear();
+		player.getCards().clear();
 	}
 
 	public void testHighCard() {
@@ -80,10 +78,9 @@ public class EvaluationTest extends TestCase {
 
 	private void evaluateHand(int[] cardIds, int expectedVal) {
 		for (int i = 0; i < cardIds.length; i++) {
-			player.drawCard(new Card(cardIds[i]));
+			player.getCards().add(new Card(cardIds[i]));
 		}
-		List<Card> cards = Evaluator.getBestCards(player.getHand());
-		int val = Evaluator.evaluateCards(cards);
+		int val = Evaluator.evaluate(player.getCards());
 		assertEquals(expectedVal, val);
 	}
 

@@ -1,47 +1,43 @@
 package ecv.poker.game;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Random;
 
 import ecv.poker.card.Card;
-import ecv.poker.card.Deck;
+import ecv.poker.card.Evaluator;
 import ecv.poker.player.Player;
 
 /**
  * A representation of a game of poker. A game has a players, a deck of cards,
- * and community cards all players can use, and a pot that goes to the winning hand
+ * and community cards all players can use, and a pot that goes to the winning
+ * hand
  * 
  * @author Evan
  */
 public class Game {
-	private Deck deck;
-	private Player user, computer;
-	private List<Card> communityCards;
-	private int pot;
-
-	public Game() {
-		deck = new Deck();
-		communityCards = new ArrayList<Card>();
-		user = new Player(this);
-		computer = new Player(this);
-		pot = 0;
-	}
-
-	public Deck getDeck() {
-		return deck;
-	}
 	
-	/**
-	 * Cards may be in deck, a player's hand, or in the community list
-	 * @return List of all cards in the game
-	 */
-	public List<Card> getAllCards() {
-		List<Card> allCards = new ArrayList<Card>();
-		allCards.addAll(deck.getCards());
-		allCards.addAll(user.getHoleCards());
-		allCards.addAll(computer.getHoleCards());
-		allCards.addAll(communityCards);
-		return allCards;
+	private Random random;
+	private Player user, bot;
+	private List<Card> deck, communityCards;
+	private int pot;
+	
+	public Game() {
+		random = new Random();
+		user = new Player(this);
+		bot = new Player(this);
+		communityCards = new ArrayList<Card>(5);
+		deck = new ArrayList<Card>(52);
+		for(int i = 100; i <= 400; i += 100) {
+			for(int j = 2; j <= 14; j++) {
+				deck.add(new Card(i + j));
+			}
+		}
+	}
+
+	public List<Card> getDeck() {
+		return deck;
 	}
 
 	/**
@@ -56,8 +52,8 @@ public class Game {
 	 * 
 	 * @return the player that is controlled by the computer
 	 */
-	public Player getComputer() {
-		return computer;
+	public Player getBot() {
+		return bot;
 	}
 
 	/**
@@ -67,7 +63,7 @@ public class Game {
 	public List<Card> getCommunityCards() {
 		return communityCards;
 	}
-	
+
 	/**
 	 * 
 	 * @return Size of the pot for the current hand
@@ -75,9 +71,10 @@ public class Game {
 	public int getPot() {
 		return pot;
 	}
-	
+
 	/**
 	 * Increment the pot by the bet size
+	 * 
 	 * @param bet
 	 */
 	public void addToPot(int bet) {
@@ -85,41 +82,77 @@ public class Game {
 	}
 	
 	/**
-	 * Deal out cards to players and start the round
+	 * First 3 community cards come out at once
 	 */
-	public void setupHand() {
-		deck.shuffle();
-		for(int i = 0; i < 2; i++) {
-			user.drawCard(deck.deal());
-			computer.drawCard(deck.deal());
+	public void dealFlop() {
+		for(int i = 0; i < 3; i++) {
+			communityCards.add(deck.remove(deck.size() - 1));
 		}
 	}
 	
 	/**
-	 * Reset the deck, clear players' hands,
-	 * award chips to the winner, and reset the pot.
+	 * 4th card comes out by itself
 	 */
-	public void endHand() {
-		deck.add(user.getHoleCards());
-		user.getHand().clear();
-		
-		deck.add(computer.getHoleCards());
-		computer.getHand().clear();
-		
-		deck.add(communityCards);
-		communityCards.clear();
+	public void dealTurn() {
+		communityCards.add(deck.remove(deck.size() - 1));
+	}
+	
+	/**
+	 * 5th card comes out by itself
+	 */
+	public void dealRiver() {
+		communityCards.add(deck.remove(deck.size() - 1));
+	}
 
-		// determine the winner of the hand, or split the pot
-		int cmp = user.getHand().compareTo(computer.getHand());
-		if(cmp > 1)
+	/**
+	 * Deal out cards to players and start the round
+	 */
+	public void setupHand() {
+		Collections.shuffle(deck, random);
+		for (int i = 0; i < 2; i++) {
+			user.getCards().add(deck.remove(deck.size() - 1));
+			bot.getCards().add(deck.remove(deck.size() - 1));
+		}
+	}
+
+	/**
+	 * Reset the deck, clear players' hands, award chips to the winner, and
+	 * reset the pot.
+	 * 
+	 * @return message to alert user of outcome
+	 */
+	public String endHand() {
+		String msg;
+		// evaluate both players' hands with community cards available
+		List<Card> cards = new ArrayList<Card>(communityCards);
+		cards.addAll(user.getCards());
+		int userRank = Evaluator.evaluate(cards);
+		
+		cards.removeAll(user.getCards());
+		cards.addAll(bot.getCards());
+		int computerRank = Evaluator.evaluate(cards);
+		
+		if (userRank > computerRank) {
 			user.addChips(pot);
-		else if(cmp < 1)
-			computer.addChips(pot);
-		else {
+			bot.addChips(-pot);
+			msg = "You won! " + pot + " chips added to your stack!";
+		} else if (userRank < computerRank) {
+			bot.addChips(pot);
+			user.addChips(-pot);
+			msg = "You lost! " + pot + " chips added to computer's stack";
+		} else {
 			user.addChips(pot / 2);
-			computer.addChips(pot / 2);
+			bot.addChips(pot / 2);
+			msg = "Split pot!";
 		}
 		pot = 0;
+		deck.addAll(user.getCards());
+		deck.addAll(bot.getCards());
+		deck.addAll(communityCards);
+		user.getCards().clear();		
+		bot.getCards().clear();		
+		communityCards.clear();
+		return msg;
 	}
 
 }
