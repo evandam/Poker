@@ -14,14 +14,12 @@ import android.graphics.RectF;
 import android.os.AsyncTask;
 import android.view.MotionEvent;
 import android.view.View;
-import android.widget.Toast;
 import ecv.poker.R;
 import ecv.poker.card.Card;
 import ecv.poker.game.Game;
 
 public class GameView extends View {
 
-	private Context context;
 	private Bitmap cardBack;
 	private Bitmap foldButtonUp, foldButtonDown;
 	private Bitmap checkButtonUp, checkButtonDown;
@@ -39,10 +37,10 @@ public class GameView extends View {
 	private int buttonX, buttonY;
 	private boolean foldButtonPressed, callButtonPressed, betButtonPressed;
 	private boolean bitmapsLoaded;
+	private int loadingProgress;
 
 	public GameView(Context context) {
 		super(context);
-		this.context = context;
 		greenPaint = new Paint();
 		greenPaint.setColor(Color.GREEN);
 		greenPaint.setAntiAlias(true);
@@ -53,6 +51,7 @@ public class GameView extends View {
 		textPaint.setAntiAlias(true);
 		table = new RectF();
 		game = new Game();
+		game.setupHand();
 	}
 
 	@Override
@@ -60,25 +59,22 @@ public class GameView extends View {
 		super.onSizeChanged(w, h, oldW, oldH);
 		screenH = h;
 		screenW = w;
-		
-		// TODO: consider loading bitmaps in a worker thread?
-		// load and scale bitmaps of cards	
+
+		// Get dimensions of bitmaps to set scales
 		BitmapFactory.Options opts = new BitmapFactory.Options();
 		opts.inJustDecodeBounds = true;
-		BitmapFactory.decodeResource(getResources(), R.drawable.card_back, opts);
+		BitmapFactory
+				.decodeResource(getResources(), R.drawable.card_back, opts);
 		cardW = screenW / 6;
 		cardH = cardW * opts.outHeight / opts.outWidth;
-		
-		BitmapFactory.decodeResource(getResources(), R.drawable.custom_bet_button_up, opts);
+
+		BitmapFactory.decodeResource(getResources(), R.drawable.bet_button_up,
+				opts);
 		buttonW = screenW / 4;
 		buttonH = buttonW * opts.outHeight / opts.outWidth;
 
 		// LOAD THE BITMAPS ASYNC
-		BitmapLoader loader = new BitmapLoader();
-		loader.execute();
-		
-		buttonX = 10;
-		buttonY = screenH - buttonH - 200;
+		new BitmapLoader().execute();
 
 		// set things like cards and chip labels relative to table
 		table.left = 0;
@@ -91,19 +87,18 @@ public class GameView extends View {
 		playerCardsY = (int) table.bottom - cardH / 2;
 		communityX = (int) (table.right + table.left) / 5 - cardW + 5;
 		communityY = (int) (table.top + table.bottom) / 2 - cardH / 2;
-
-		// resources ready to go!
-		game.setupHand();
+		
+		buttonX = 10;
+		buttonY = screenH - buttonH - 200;
 	}
 
 	@Override
 	protected void onDraw(Canvas canvas) {
 		// canvas.drawOval(table, greenPaint);
-		if(bitmapsLoaded) {
+		if (bitmapsLoaded) {
 			// draw player, computer, and community cards
 			for (int i = 0; i < game.getBot().getCards().size(); i++) {
-				canvas.drawBitmap(game.getBot().getCard(i).getBitmap(), compCardsX
-						- i * (cardW + 10), compCardsY, null);
+				canvas.drawBitmap(cardBack,	compCardsX - i * (cardW + 10), compCardsY, null);
 			}
 			for (int i = 0; i < game.getUser().getCards().size(); i++) {
 				canvas.drawBitmap(game.getUser().getCard(i).getBitmap(),
@@ -114,12 +109,13 @@ public class GameView extends View {
 						communityX + i * (cardW + 10), communityY, null);
 			}
 			// draw chip counts
-			canvas.drawText(game.getUser().getChips() + "", playerCardsX + cardW
-					+ 5, playerCardsY + cardH + 40, textPaint);
+			canvas.drawText(game.getUser().getChips() + "", playerCardsX
+					+ cardW + 5, playerCardsY + cardH + 40, textPaint);
 			canvas.drawText(game.getBot().getChips() + "", compCardsX - 5,
 					compCardsY + cardH + 40, textPaint);
 			if (game.getPot() > 0) {
-				canvas.drawText(game.getPot() + "", (table.left + table.right) / 2,
+				canvas.drawText(game.getPot() + "",
+						(table.left + table.right) / 2,
 						communityY + cardH + 40, textPaint);
 			}
 			// draw control buttons on bottom
@@ -127,22 +123,25 @@ public class GameView extends View {
 				canvas.drawBitmap(foldButtonDown, buttonX, buttonY, null);
 			else
 				canvas.drawBitmap(foldButtonUp, buttonX, buttonY, null);
-			// decide if check or call button should be drawn...
+			// TODO: decide if check or call button should be drawn...
 			if (callButtonPressed)
-				canvas.drawBitmap(checkButtonDown, buttonX + buttonW + 10, buttonY,
-						null);
+				canvas.drawBitmap(checkButtonDown, buttonX + buttonW + 10,
+						buttonY, null);
 			else
-				canvas.drawBitmap(checkButtonUp, buttonX + buttonW + 10, buttonY,
-						null);
-	
+				canvas.drawBitmap(checkButtonUp, buttonX + buttonW + 10,
+						buttonY, null);
+
 			if (betButtonPressed)
 				canvas.drawBitmap(betButtonDown, buttonX + 2 * buttonW + 20,
 						buttonY, null);
 			else
-				canvas.drawBitmap(betButtonUp, buttonX + 2 * buttonW + 20, buttonY,
-						null);
-		} else {
-			canvas.drawText("LOADING...", screenW / 2, screenH / 2, textPaint);
+				canvas.drawBitmap(betButtonUp, buttonX + 2 * buttonW + 20,
+						buttonY, null);
+		} 
+		// Bitmaps worker thread is running. Display the progress
+		else {
+			canvas.drawText("LOADING... " + loadingProgress + "%", screenW / 2,
+					screenH / 2, textPaint);
 		}
 	}
 
@@ -150,7 +149,7 @@ public class GameView extends View {
 		int action = evt.getAction();
 		int x = (int) evt.getX();
 		int y = (int) evt.getY();
-
+		// TODO: only check if player's turn...allow queuing moves?
 		switch (action) {
 		case MotionEvent.ACTION_DOWN:
 			if (detectCollision(foldButtonUp, buttonX, buttonY, x, y))
@@ -168,28 +167,17 @@ public class GameView extends View {
 		case MotionEvent.ACTION_UP:
 			if (foldButtonPressed) {
 				game.getUser().fold();
+				game.dealNextCard();
 				foldButtonPressed = false;
 			} else if (callButtonPressed) {
 				game.getUser().call(0);
+				game.dealNextCard();
 				callButtonPressed = false;
 			} else if (betButtonPressed) {
 				game.getUser().bet(10);
+				game.dealNextCard();
 				betButtonPressed = false;
-			} else {
-				// for testing, any touch deals cards...
-				if (game.getCommunityCards().size() < 3)
-					game.dealFlop();
-				else if (game.getCommunityCards().size() < 4)
-					game.dealTurn();
-				else if (game.getCommunityCards().size() < 5)
-					game.dealRiver();
-				else {
-					// response message of who won and how much
-					String str = game.endHand();
-					Toast.makeText(context, str, Toast.LENGTH_LONG).show();
-					game.setupHand();
-				}
-			}
+			} 
 			break;
 		}
 		invalidate();
@@ -206,63 +194,77 @@ public class GameView extends View {
 	 *            - y coordinate of bitmap
 	 * @param evtX
 	 * @param evtY
-	 * @return true if collision. otherwise false.
+	 * @return true if collision. otherwise false, including if the bitmap is null
 	 */
 	private boolean detectCollision(Bitmap bitmap, int left, int top, int evtX,
 			int evtY) {
-		return evtX > left && evtX < bitmap.getWidth() + left && evtY > top
-				&& evtY < bitmap.getHeight() + top;
+		if (bitmap != null)
+			return evtX > left && evtX < bitmap.getWidth() + left && evtY > top
+					&& evtY < bitmap.getHeight() + top;
+		else
+			return false;
 	}
-	
-	private class BitmapLoader extends AsyncTask<Void, Void, Void> {
 
+	/**
+	 * Load bitmaps in asynchronously
+	 * 
+	 * @author Evan
+	 * 
+	 */
+	private class BitmapLoader extends AsyncTask<Void, Integer, Boolean> {
+
+		private final float TOTAL_BITMAPS = 61; // cards and buttons
+		private int PROCESSED_BITMAPS = 0;
+
+		/**
+		 * @param lists of cards to get bitmaps for
+		 */
 		@Override
-		protected Void doInBackground(Void... params) {
-			List<Card> cards = new ArrayList<Card>();
-			cards.addAll(game.getDeck());
+		protected Boolean doInBackground(Void... params) {
+			List<Card> cards = new ArrayList<Card>(game.getDeck());
 			cards.addAll(game.getBot().getCards());
 			cards.addAll(game.getUser().getCards());
+			cards.addAll(game.getCommunityCards());
+			
 			for (Card c : cards) {
-				int resourceId = getResources().getIdentifier("card" + c.getId(),
-						"drawable", "ecv.poker");
-				Bitmap bmp = BitmapFactory.decodeResource(
-						context.getResources(), resourceId);
-				c.setBitmap(Bitmap.createScaledBitmap(bmp, cardW, cardH, false));
+				int resId = getResources().getIdentifier(
+						"card" + c.getId(), "drawable", "ecv.poker");
+				c.setBitmap(getScaledBitmap(resId, cardW, cardH));
 			}
-			cardBack = BitmapFactory.decodeResource(getResources(),
-					R.drawable.card_back);
-			cardBack = Bitmap.createScaledBitmap(cardBack, cardW, cardH, false);
-			
-			foldButtonUp = BitmapFactory.decodeResource(getResources(),
-					R.drawable.custom_fold_button_up);
-			foldButtonUp = Bitmap.createScaledBitmap(foldButtonUp, buttonW, buttonH, false);
-			checkButtonUp = BitmapFactory.decodeResource(getResources(),
-					R.drawable.custom_check_button_up);
-			checkButtonUp = Bitmap.createScaledBitmap(checkButtonUp, buttonW, buttonH, false);
-			callButtonUp = BitmapFactory.decodeResource(getResources(),
-					R.drawable.custom_call_button_up);
-			callButtonUp = Bitmap.createScaledBitmap(callButtonUp, buttonW, buttonH, false);
-			betButtonUp = BitmapFactory.decodeResource(getResources(),
-					R.drawable.custom_bet_button_up);
-			betButtonUp = Bitmap.createScaledBitmap(betButtonUp, buttonW, buttonH, false);
-			
-			foldButtonDown = BitmapFactory.decodeResource(getResources(),
-					R.drawable.custom_fold_button_down);
-			foldButtonDown = Bitmap.createScaledBitmap(foldButtonDown, buttonW, buttonH, false);
-			checkButtonDown = BitmapFactory.decodeResource(getResources(),
-					R.drawable.custom_check_button_down);
-			checkButtonDown = Bitmap.createScaledBitmap(checkButtonDown, buttonW, buttonH, false);
-			callButtonDown = BitmapFactory.decodeResource(getResources(),
-					R.drawable.custom_call_button_down);
-			callButtonDown = Bitmap.createScaledBitmap(callButtonDown, buttonW, buttonH, false);
-			betButtonDown = BitmapFactory.decodeResource(getResources(),
-					R.drawable.custom_bet_button_down);
-			betButtonDown = Bitmap.createScaledBitmap(betButtonDown, buttonW, buttonH, false);
-			
-			bitmapsLoaded = true;
-			postInvalidate();
-			return null;
+			cardBack = getScaledBitmap(R.drawable.card_back, cardW, cardH);
+
+			foldButtonUp = getScaledBitmap(R.drawable.fold_button_up, buttonW,buttonH);
+			checkButtonUp = getScaledBitmap(R.drawable.check_button_up, buttonW, buttonH);
+			callButtonUp = getScaledBitmap(R.drawable.call_button_up, buttonW, buttonH);
+			betButtonUp = getScaledBitmap(R.drawable.bet_button_up, buttonW, buttonH);
+
+			foldButtonDown = getScaledBitmap(R.drawable.fold_button_down, buttonW, buttonH);
+			checkButtonDown = getScaledBitmap(R.drawable.check_button_down, buttonW, buttonH);
+			callButtonDown = getScaledBitmap(R.drawable.call_button_down, buttonW, buttonH);
+			betButtonDown = getScaledBitmap(R.drawable.bet_button_down, buttonW, buttonH);
+
+			return true;
 		}
-		
+
+		@Override
+		protected void onProgressUpdate(Integer... progress) {
+			loadingProgress = progress[0];
+			invalidate();
+		}
+
+		@Override
+		protected void onPostExecute(Boolean result) {
+			bitmapsLoaded = result;
+			invalidate();
+		}
+
+		private Bitmap getScaledBitmap(int resId, int scaledW, int scaledH) {
+			Bitmap bmp = BitmapFactory.decodeResource(getResources(), resId);
+			bmp = Bitmap.createScaledBitmap(bmp, scaledW, scaledH, false);
+			int progress = (int) (PROCESSED_BITMAPS / TOTAL_BITMAPS * 100);
+			PROCESSED_BITMAPS++;
+			publishProgress(progress);
+			return bmp;
+		}
 	}
 }

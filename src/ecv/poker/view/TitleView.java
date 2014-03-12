@@ -27,13 +27,13 @@ public class TitleView extends View {
 		titleGraphic = BitmapFactory.decodeResource(getResources(),
 				R.drawable.aces);
 		playButtonDown = BitmapFactory.decodeResource(getResources(),
-				R.drawable.custom_play_button_down);
+				R.drawable.play_button_down);
 		playButtonUp = BitmapFactory.decodeResource(getResources(),
-				R.drawable.custom_play_button_up);
+				R.drawable.play_button_up);
 		settingsButtonDown = BitmapFactory.decodeResource(getResources(),
-				R.drawable.custom_settings_button_down);
+				R.drawable.settings_button_down);
 		settingsButtonUp = BitmapFactory.decodeResource(getResources(),
-				R.drawable.custom_settings_button_up);
+				R.drawable.settings_button_up);
 	}
 
 	@Override

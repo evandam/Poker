@@ -40,68 +40,36 @@ public class Game {
 		return deck;
 	}
 
-	/**
-	 * 
-	 * @return the player that is controlled by the user
-	 */
 	public Player getUser() {
 		return user;
 	}
 
-	/**
-	 * 
-	 * @return the player that is controlled by the computer
-	 */
 	public Player getBot() {
 		return bot;
 	}
 
-	/**
-	 * 
-	 * @return List of cards available for all players to use
-	 */
 	public List<Card> getCommunityCards() {
 		return communityCards;
 	}
 
 	/**
-	 * 
 	 * @return Size of the pot for the current hand
 	 */
 	public int getPot() {
 		return pot;
 	}
 
-	/**
-	 * Increment the pot by the bet size
-	 * 
-	 * @param bet
-	 */
 	public void addToPot(int bet) {
 		pot += bet;
 	}
 	
-	/**
-	 * First 3 community cards come out at once
-	 */
-	public void dealFlop() {
-		for(int i = 0; i < 3; i++) {
-			communityCards.add(deck.remove(deck.size() - 1));
-		}
-	}
-	
-	/**
-	 * 4th card comes out by itself
-	 */
-	public void dealTurn() {
-		communityCards.add(deck.remove(deck.size() - 1));
-	}
-	
-	/**
-	 * 5th card comes out by itself
-	 */
-	public void dealRiver() {
-		communityCards.add(deck.remove(deck.size() - 1));
+	public void dealNextCard() {
+		if(communityCards.size() < 3) {
+			communityCards.add(popDeck());
+			communityCards.add(popDeck());
+			communityCards.add(popDeck());
+		} else if(communityCards.size() < 5)
+			communityCards.add(popDeck());
 	}
 
 	/**
@@ -110,9 +78,13 @@ public class Game {
 	public void setupHand() {
 		Collections.shuffle(deck, random);
 		for (int i = 0; i < 2; i++) {
-			user.getCards().add(deck.remove(deck.size() - 1));
-			bot.getCards().add(deck.remove(deck.size() - 1));
+			user.getCards().add(popDeck());
+			bot.getCards().add(popDeck());
 		}
+	}
+	
+	public Card popDeck() {
+		return deck.remove(deck.size() - 1);
 	}
 
 	/**
