@@ -150,37 +150,39 @@ public class GameView extends View {
 		int x = (int) evt.getX();
 		int y = (int) evt.getY();
 		// TODO: only check if player's turn...allow queuing moves?
-		switch (action) {
-		case MotionEvent.ACTION_DOWN:
-			if (detectCollision(foldButtonUp, buttonX, buttonY, x, y))
-				foldButtonPressed = true;
-			else if (detectCollision(callButtonUp, buttonX + buttonW + 10,
-					buttonY, x, y))
-				callButtonPressed = true;
-			else if (detectCollision(betButtonUp, buttonX + 2 * buttonW + 20,
-					buttonY, x, y))
-				betButtonPressed = true;
-			break;
-		case MotionEvent.ACTION_MOVE:
-			// slider bar stuff?
-			break;
-		case MotionEvent.ACTION_UP:
-			if (foldButtonPressed) {
-				game.getUser().fold();
-				game.dealNextCard();
-				foldButtonPressed = false;
-			} else if (callButtonPressed) {
-				game.getUser().call(0);
-				game.dealNextCard();
-				callButtonPressed = false;
-			} else if (betButtonPressed) {
-				game.getUser().bet(10);
-				game.dealNextCard();
-				betButtonPressed = false;
-			} 
-			break;
+		if(bitmapsLoaded) {
+			switch (action) {
+			case MotionEvent.ACTION_DOWN:
+				if (detectCollision(foldButtonUp, buttonX, buttonY, x, y))
+					foldButtonPressed = true;
+				else if (detectCollision(callButtonUp, buttonX + buttonW + 10,
+						buttonY, x, y))
+					callButtonPressed = true;
+				else if (detectCollision(betButtonUp, buttonX + 2 * buttonW + 20,
+						buttonY, x, y))
+					betButtonPressed = true;
+				break;
+			case MotionEvent.ACTION_MOVE:
+				// slider bar stuff?
+				break;
+			case MotionEvent.ACTION_UP:
+				if (foldButtonPressed) {
+					game.getUser().fold();
+					game.dealNextCard();
+					foldButtonPressed = false;
+				} else if (callButtonPressed) {
+					game.getUser().call(0);
+					game.dealNextCard();
+					callButtonPressed = false;
+				} else if (betButtonPressed) {
+					game.getUser().bet(10);
+					game.dealNextCard();
+					betButtonPressed = false;
+				} 
+				break;
+			}
+			invalidate();
 		}
-		invalidate();
 		return true;
 	}
 
@@ -194,15 +196,13 @@ public class GameView extends View {
 	 *            - y coordinate of bitmap
 	 * @param evtX
 	 * @param evtY
-	 * @return true if collision. otherwise false, including if the bitmap is null
+	 * @return true if collision. otherwise false
 	 */
 	private boolean detectCollision(Bitmap bitmap, int left, int top, int evtX,
 			int evtY) {
-		if (bitmap != null)
+		
 			return evtX > left && evtX < bitmap.getWidth() + left && evtY > top
 					&& evtY < bitmap.getHeight() + top;
-		else
-			return false;
 	}
 
 	/**
