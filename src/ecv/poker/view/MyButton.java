@@ -16,19 +16,22 @@ public class MyButton {
 	private int x, y;
 	private boolean isPressed;
 	
-	public boolean detectCollision(int evtX, int evtY) {
-		int width, height;
+	/**
+	 * Set the pressed flag to true if event is inside the button.
+	 * @param evtX
+	 * @param evtY
+	 */
+	public void detectCollision(int evtX, int evtY) {
 		if(up != null) {
-			width = up.getWidth();
-			height = up.getHeight();
+			isPressed = evtX > x && evtX < x + up.getWidth() &&
+					evtY > y && evtY < y + up.getHeight();
 		} else if (down != null) {
-			width = down.getWidth();
-			height = down.getWidth();
-		} else
-			return false;
+			isPressed = evtX > x && evtX < x + down.getWidth() &&
+					evtY > y && evtY < y + down.getHeight();
+		} else {
+			isPressed = false;
+		} 
 		
-		return evtX > x && evtX < x + width &&
-				evtY > y && evtY < y + height;
 	}	
 	public void draw(Canvas canvas) {
 		if(isPressed)
@@ -42,23 +45,17 @@ public class MyButton {
 	public void setUp(Bitmap up) {
 		this.up = up;
 	}
-	public int getX() {
-		return x;
-	}
-	public void setX(int x) {
-		this.x = x;
-	}
-	public boolean isPressed() {
-		return isPressed;
-	}
-	public void setPressed(boolean isPressed) {
-		this.isPressed = isPressed;
-	}
 	public Bitmap getDown() {
 		return down;
 	}
 	public void setDown(Bitmap down) {
 		this.down = down;
+	}
+	public int getX() {
+		return x;
+	}
+	public void setX(int x) {
+		this.x = x;
 	}
 	public int getY() {
 		return y;
@@ -66,9 +63,14 @@ public class MyButton {
 	public void setY(int y) {
 		this.y = y;
 	}
-	
 	public void setXY(int x, int y) {
 		this.x = x;
 		this.y = y;
+	}
+	public boolean isPressed() {
+		return isPressed;
+	}
+	public void setPressed(boolean isPressed) {
+		this.isPressed = isPressed;
 	}
 }

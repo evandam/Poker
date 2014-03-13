@@ -12,28 +12,20 @@ import ecv.poker.activity.GameActivity;
 
 public class TitleView extends View {
 
+	// width:height ratios of bitmaps
+	private static final float TITLE_GRAPHIC_RATIO = 489f / 457;
+	private static final float BUTTON_RATIO = 412f / 162;
+	
 	private Context context;
 	private Bitmap titleGraphic;
-	private Bitmap playButtonUp, playButtonDown;
-	private Bitmap settingsButtonUp, settingsButtonDown;
+	private MyButton playButton, settingsButton;
 	private int screenW, screenH;
-	private int playButtonX, playButtonY; 
-	private int settingsButtonX, settingsButtonY;
-	private boolean playButtonPressed, settingsButtonPressed;
 
 	public TitleView(Context context) {
 		super(context);
 		this.context = context;
-		titleGraphic = BitmapFactory.decodeResource(getResources(),
-				R.drawable.aces);
-		playButtonDown = BitmapFactory.decodeResource(getResources(),
-				R.drawable.play_button_down);
-		playButtonUp = BitmapFactory.decodeResource(getResources(),
-				R.drawable.play_button_up);
-		settingsButtonDown = BitmapFactory.decodeResource(getResources(),
-				R.drawable.settings_button_down);
-		settingsButtonUp = BitmapFactory.decodeResource(getResources(),
-				R.drawable.settings_button_up);
+		playButton = new MyButton();
+		settingsButton = new MyButton();
 	}
 
 	@Override
@@ -43,40 +35,28 @@ public class TitleView extends View {
 		screenW = w;
 
 		// scale the title graphic and buttons
-		titleGraphic = Bitmap.createScaledBitmap(titleGraphic, 
-				screenH / 2 * titleGraphic.getWidth() / titleGraphic.getHeight(), screenH / 2, false);
+		int titleH = screenH / 2;
+		int titleW = (int) (titleH * TITLE_GRAPHIC_RATIO);
+		titleGraphic = getScaledBitmap(R.drawable.aces, titleW, titleH);
+
 		int buttonH = screenH / 7;
-		int buttonW = buttonH * playButtonUp.getWidth() / playButtonUp.getHeight();
-		playButtonUp = Bitmap.createScaledBitmap(playButtonUp, buttonW, buttonH, false);
-		playButtonDown = Bitmap.createScaledBitmap(playButtonDown, buttonW, buttonH, false);
-		settingsButtonUp = Bitmap.createScaledBitmap(settingsButtonUp, buttonW, buttonH, false);
-		settingsButtonDown = Bitmap.createScaledBitmap(settingsButtonDown, buttonW, buttonH, false);
+		int buttonW = (int) (buttonH * BUTTON_RATIO);
+		playButton.setUp(getScaledBitmap(R.drawable.play_button_up, buttonW, buttonH));
+		playButton.setDown(getScaledBitmap(R.drawable.play_button_down, buttonW, buttonH));
+		settingsButton.setUp(getScaledBitmap(R.drawable.settings_button_up, buttonW, buttonH));
+		settingsButton.setDown(getScaledBitmap(R.drawable.settings_button_down, buttonW, buttonH));
 		
 		// set the position of the buttons
-		playButtonX = (screenW - buttonW) / 2;
-		playButtonY = screenH / 2 + 50;
-		settingsButtonX = playButtonX;
-		settingsButtonY = playButtonY + buttonH + 20;
-
-		
+		playButton.setXY(screenW / 2 - buttonW / 2, 3 * screenH / 4 - buttonH);
+		settingsButton.setXY(playButton.getX(), playButton.getY() + buttonH + 10);		
 	}
 
 	@Override
 	protected void onDraw(Canvas canvas) {
 		// draw the title image
 		canvas.drawBitmap(titleGraphic, screenW / 2 - titleGraphic.getWidth() / 2, 0, null);
-
-		if (playButtonPressed)
-			canvas.drawBitmap(playButtonDown, playButtonX, playButtonY, null);
-		else
-			canvas.drawBitmap(playButtonUp, playButtonX, playButtonY, null);
-
-		if (settingsButtonPressed)
-			canvas.drawBitmap(settingsButtonDown, settingsButtonX,
-					settingsButtonY, null);
-		else
-			canvas.drawBitmap(settingsButtonUp, settingsButtonX,
-					settingsButtonY, null);
+		playButton.draw(canvas);
+		settingsButton.draw(canvas);
 	}
 
 	@Override
@@ -87,34 +67,28 @@ public class TitleView extends View {
 
 		switch (action) {
 		case MotionEvent.ACTION_DOWN:
-			// C.D. for play button
-			if (x > playButtonX && x < playButtonX + playButtonUp.getWidth()
-					&& y > playButtonY
-					&& y < playButtonY + playButtonUp.getHeight()) {
-				playButtonPressed = true;
-			}
-			// C.D. for settings button
-			else if (x > settingsButtonX
-					&& x < settingsButtonX + settingsButtonUp.getWidth()
-					&& y > settingsButtonY
-					&& y < settingsButtonY + settingsButtonUp.getHeight()) {
-				settingsButtonPressed = true;
-			}
+			playButton.detectCollision(x, y);
+			settingsButton.detectCollision(x, y);
 			break;
 		case MotionEvent.ACTION_MOVE:
 			break;
 		case MotionEvent.ACTION_UP:
-			if (playButtonPressed) {
+			if (playButton.isPressed()) {
 				Intent gameIntent = new Intent(context, GameActivity.class);
 				context.startActivity(gameIntent);
-				playButtonPressed = false;
-			} else if (settingsButtonPressed) {
+				playButton.setPressed(false);
+			} else if (settingsButton.isPressed()) {
 				// do something here
-				settingsButtonPressed = false;
+				settingsButton.setPressed(false);
 			}
 			break;
 		}
 		invalidate();
 		return true;
+	}
+	// helper method to load and scale a bitmap in one step
+	private Bitmap getScaledBitmap(int resId, int scaledW, int scaledH) {
+		Bitmap bmp = BitmapFactory.decodeResource(getResources(), resId);
+		return Bitmap.createScaledBitmap(bmp, scaledW, scaledH, false);
 	}
 }

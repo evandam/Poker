@@ -19,10 +19,14 @@ import ecv.poker.card.Card;
 import ecv.poker.game.Game;
 
 public class GameView extends View {
-
+	
+	// width:height ratios of bitmaps
+	private static final float BUTTON_RATIO = 412f / 162;
+	private static final float CARD_RATIO = 222f / 284;
+	
 	private Bitmap cardBack;
-	private MyButton foldButton, checkButton, callButton, betButton,
-			raiseButton;
+	private MyButton foldButton, checkButton, callButton, betButton, raiseButton;
+	private Slider slider;
 	private Game game;
 	private RectF table;
 	private Paint greenPaint, whitePaint;
@@ -32,11 +36,9 @@ public class GameView extends View {
 	private int compCardsX, compCardsY;
 	private int playerCardsX, playerCardsY;
 	private int communityX, communityY;
-	private int sliderX, sliderY, sliderStart, sliderEnd;
 	private boolean bitmapsLoaded;
 	private int loadingProgress;
-	private boolean sliderPressed;
-
+	
 	public GameView(Context context) {
 		super(context);
 		greenPaint = new Paint();
@@ -54,6 +56,10 @@ public class GameView extends View {
 		betButton = new MyButton();
 		raiseButton = new MyButton();
 		
+		slider = new Slider();
+		slider.setMinVal(0);
+		slider.setMaxVal(100);
+		
 		table = new RectF();
 		game = new Game();
 		game.setupHand();
@@ -66,25 +72,17 @@ public class GameView extends View {
 		screenW = w;
 
 		// Get dimensions of bitmaps to set scales
-		BitmapFactory.Options opts = new BitmapFactory.Options();
-		opts.inJustDecodeBounds = true;
-		BitmapFactory
-				.decodeResource(getResources(), R.drawable.card_back, opts);
 		cardW = screenW / 6;
-		cardH = cardW * opts.outHeight / opts.outWidth;
-		BitmapFactory.decodeResource(getResources(), R.drawable.bet_button_up,
-				opts);
+		cardH = (int) (cardW / CARD_RATIO);
+		
 		buttonW = screenW / 4;
-		buttonH = buttonW * opts.outHeight / opts.outWidth;
+		buttonH = (int) (buttonW / BUTTON_RATIO);
 
 		// Load bitmaps asynchronously on a background thread
 		new BitmapLoader().execute();
 
 		// set things like cards and chip labels relative to table
-		table.left = 0;
-		table.right = screenW;
-		table.top = cardH;
-		table.bottom = table.top + (screenH / 2);
+		table.set(0, cardH, screenW, cardH + screenH / 2);
 		compCardsX = (int) table.right - cardW - 50;
 		compCardsY = (int) table.top - cardH / 2;
 		playerCardsX = (int) table.left + 50;
@@ -99,11 +97,11 @@ public class GameView extends View {
 		callButton.setXY(checkButton.getX(), buttonY);
 		betButton.setXY(callButton.getX() + buttonW + 10, buttonY);
 		raiseButton.setXY(betButton.getX(), buttonY);
-		
-		sliderY = screenH - 100;
-		sliderStart = screenW / 10;
-		sliderX = sliderStart;
-		sliderEnd = 9 * sliderStart;
+
+		slider.setY(screenH - 100);
+		slider.setStartX(screenW / 10);
+		slider.setStopX(9 * slider.getStartX());
+		slider.setCurX(slider.getStartX());
 	}
 
 	@Override
@@ -126,20 +124,21 @@ public class GameView extends View {
 
 			// draw chip counts
 			canvas.drawText(game.getUser().getChips() + "", playerCardsX
-					+ cardW + 5, playerCardsY + cardH + 40, whitePaint);
+					+ cardW + 5, playerCardsY + cardH + whitePaint.getFontSpacing(), whitePaint);
 			canvas.drawText(game.getBot().getChips() + "", compCardsX - 5,
-					compCardsY + cardH + 40, whitePaint);
+					compCardsY + cardH + whitePaint.getFontSpacing(), whitePaint);
 			canvas.drawText(game.getPot() + "", (table.left + table.right) / 2,
-					communityY + cardH + 40, whitePaint);
+					communityY + cardH + whitePaint.getFontSpacing(), whitePaint);
 
 			foldButton.draw(canvas);
 			checkButton.draw(canvas);
 			betButton.draw(canvas);
-
-			// draw the bet slider
-			canvas.drawLine(sliderStart, sliderY, sliderEnd, sliderY,
-					whitePaint);
-			canvas.drawCircle(sliderX, sliderY, 20, whitePaint);
+			slider.draw(canvas, whitePaint);
+			
+			// draw value of the bet
+			int betValX = betButton.getX() + buttonW + buttonW / 2 - 20;
+			int betValY = betButton.getY() + (int) whitePaint.getFontSpacing();
+			canvas.drawText(slider.getCurVal() + "", betValX, betValY, whitePaint);
 		}
 		// Bitmaps are still being loaded. Display the progress
 		else {
@@ -156,30 +155,16 @@ public class GameView extends View {
 		if (bitmapsLoaded) {
 			switch (action) {
 			case MotionEvent.ACTION_DOWN:
-				if (foldButton.detectCollision(x, y))
-					foldButton.setPressed(true);
-				else if (checkButton.detectCollision(x, y))
-					checkButton.setPressed(true);
-				else if (callButton.detectCollision(x, y))
-					callButton.setPressed(true);
-				else if (betButton.detectCollision(x, y))
-					betButton.setPressed(true);
-				else if (raiseButton.detectCollision(x, y))
-					raiseButton.setPressed(true);
-				else if (y > sliderY - 20 && y < sliderY + 20
-						&& x > sliderStart && x < sliderEnd) {
-					sliderPressed = true;
-				}
+				foldButton.detectCollision(x, y);
+				checkButton.detectCollision(x, y);
+				callButton.detectCollision(x, y);
+				betButton.detectCollision(x, y);
+				raiseButton.detectCollision(x, y);
+				slider.detectCollision(x, y);
 				break;
 			case MotionEvent.ACTION_MOVE:
-				if (sliderPressed) {
-					if (x < sliderStart)
-						sliderX = sliderStart;
-					else if (x > sliderEnd)
-						sliderX = sliderEnd;
-					else
-						sliderX = x;
-				}
+				if (slider.isPressed())
+					slider.setCurX(x);
 				break;
 			case MotionEvent.ACTION_UP:
 				if (foldButton.isPressed()) {
@@ -192,10 +177,8 @@ public class GameView extends View {
 					betButton.setPressed(false);
 				} else if (raiseButton.isPressed()) {
 					raiseButton.setPressed(false);
-				}
-
-				else if (sliderPressed) {
-					sliderPressed = false;
+				} else if (slider.isPressed()) {
+					slider.setPressed(false);
 				}
 				break;
 			}
@@ -212,7 +195,7 @@ public class GameView extends View {
 	 */
 	private class BitmapLoader extends AsyncTask<Void, Integer, Boolean> {
 
-		// fields used to calculate progress
+		// fields used to calculate progress (61 bitmaps being loaded)
 		private static final int PROGRESS_INCREMENT = (int) (1.0 / 61 * 100);
 		private int CURRENT_PROGRESS = 0;
 
