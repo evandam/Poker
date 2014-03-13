@@ -65,11 +65,11 @@ public class Game {
 	
 	public void dealNextCard() {
 		if(communityCards.size() < 3) {
-			communityCards.add(popDeck());
-			communityCards.add(popDeck());
-			communityCards.add(popDeck());
+			communityCards.add(deal());
+			communityCards.add(deal());
+			communityCards.add(deal());
 		} else if(communityCards.size() < 5)
-			communityCards.add(popDeck());
+			communityCards.add(deal());
 	}
 
 	/**
@@ -78,44 +78,47 @@ public class Game {
 	public void setupHand() {
 		Collections.shuffle(deck, random);
 		for (int i = 0; i < 2; i++) {
-			user.getCards().add(popDeck());
-			bot.getCards().add(popDeck());
+			user.getCards().add(deal());
+			bot.getCards().add(deal());
 		}
+	 }
+	
+	public Card deal() {
+		return deck.remove(deck.size() - 1);
 	}
 	
-	public Card popDeck() {
-		return deck.remove(deck.size() - 1);
+	/**
+	 * List because there is a chance that it is a split pot.
+	 * @return list of players who won the pot.
+	 */
+	public List<Player> getWinners() {
+		List<Player> winners = new ArrayList<Player>();
+		
+		List<Card> userCards = new ArrayList<Card>(user.getCards());
+		userCards.addAll(communityCards);
+		List<Card> botCards = new ArrayList<Card>(bot.getCards());
+		botCards.addAll(communityCards);
+		
+		int userRank = Evaluator.evaluate(userCards);
+		int botRank = Evaluator.evaluate(botCards);
+		
+		if(userRank >= botRank)
+			winners.add(user);
+		if(userRank <= botRank)
+			winners.add(bot);
+		return winners;
 	}
 
 	/**
-	 * Reset the deck, clear players' hands, award chips to the winner, and
+	 * Reset the deck, clear players' hands, award chips to the winner(s), and
 	 * reset the pot.
 	 * 
 	 * @return message to alert user of outcome
 	 */
-	public String endHand() {
-		String msg;
-		// evaluate both players' hands with community cards available
-		List<Card> cards = new ArrayList<Card>(communityCards);
-		cards.addAll(user.getCards());
-		int userRank = Evaluator.evaluate(cards);
-		
-		cards.removeAll(user.getCards());
-		cards.addAll(bot.getCards());
-		int computerRank = Evaluator.evaluate(cards);
-		
-		if (userRank > computerRank) {
-			user.addChips(pot);
-			bot.addChips(-pot);
-			msg = "You won! " + pot + " chips added to your stack!";
-		} else if (userRank < computerRank) {
-			bot.addChips(pot);
-			user.addChips(-pot);
-			msg = "You lost! " + pot + " chips added to computer's stack";
-		} else {
-			user.addChips(pot / 2);
-			bot.addChips(pot / 2);
-			msg = "Split pot!";
+	public void endHand() {
+		List<Player> winners = getWinners();
+		for(Player player : winners) {
+			player.addChips(pot / winners.size());
 		}
 		pot = 0;
 		deck.addAll(user.getCards());
@@ -124,7 +127,5 @@ public class Game {
 		user.getCards().clear();		
 		bot.getCards().clear();		
 		communityCards.clear();
-		return msg;
 	}
-
 }

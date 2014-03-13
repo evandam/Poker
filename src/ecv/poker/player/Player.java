@@ -76,14 +76,4 @@ public class Player {
 	public List<Card> getCards() {
 		return cards;
 	}
-
-	/**
-	 * 
-	 * @param i
-	 *            index of card to get
-	 * @return the card in the player's hand
-	 */
-	public Card getCard(int i) {
-		return cards.get(i);
-	}
 }
