@@ -21,12 +21,8 @@ import ecv.poker.game.Game;
 public class GameView extends View {
 
 	private Bitmap cardBack;
-	// TODO create Button class to hold isPressed, get correct bitmap, coords, etc.
-	private Bitmap foldButtonUp, foldButtonDown;
-	private Bitmap checkButtonUp, checkButtonDown;
-	private Bitmap callButtonUp, callButtonDown;
-	private Bitmap betButtonUp, betButtonDown;
-	private Bitmap raiseButtonUp, raiseButtonDown; // TODO create these
+	private MyButton foldButton, checkButton, callButton, betButton,
+			raiseButton;
 	private Game game;
 	private RectF table;
 	private Paint greenPaint, whitePaint;
@@ -36,12 +32,10 @@ public class GameView extends View {
 	private int compCardsX, compCardsY;
 	private int playerCardsX, playerCardsY;
 	private int communityX, communityY;
-	private int buttonX, buttonY;
 	private int sliderX, sliderY, sliderStart, sliderEnd;
-	private boolean foldButtonPressed, callButtonPressed, betButtonPressed,
-			sliderPressed;
 	private boolean bitmapsLoaded;
 	private int loadingProgress;
+	private boolean sliderPressed;
 
 	public GameView(Context context) {
 		super(context);
@@ -53,6 +47,12 @@ public class GameView extends View {
 		whitePaint.setAntiAlias(true);
 		whitePaint.setTextSize(32);
 		whitePaint.setTextAlign(Align.CENTER);
+
+		foldButton = new MyButton();
+		checkButton = new MyButton();
+		callButton = new MyButton();
+		betButton = new MyButton();
+		raiseButton = new MyButton();
 		
 		table = new RectF();
 		game = new Game();
@@ -92,8 +92,14 @@ public class GameView extends View {
 		communityX = (int) (table.right + table.left) / 5 - cardW + 5;
 		communityY = (int) (table.top + table.bottom) / 2 - cardH / 2;
 
-		buttonX = 10;
-		buttonY = screenH - buttonH - 200;
+		int buttonX = 10;
+		int buttonY = screenH - buttonH - 200;
+		foldButton.setXY(buttonX, buttonY);
+		checkButton.setXY(foldButton.getX() + buttonW + 10, buttonY);
+		callButton.setXY(checkButton.getX(), buttonY);
+		betButton.setXY(callButton.getX() + buttonW + 10, buttonY);
+		raiseButton.setXY(betButton.getX(), buttonY);
+		
 		sliderY = screenH - 100;
 		sliderStart = screenW / 10;
 		sliderX = sliderStart;
@@ -126,25 +132,9 @@ public class GameView extends View {
 			canvas.drawText(game.getPot() + "", (table.left + table.right) / 2,
 					communityY + cardH + 40, whitePaint);
 
-			// draw buttons on bottom for fold, check/call, bet/raise
-			if (foldButtonPressed)
-				canvas.drawBitmap(foldButtonDown, buttonX, buttonY, null);
-			else
-				canvas.drawBitmap(foldButtonUp, buttonX, buttonY, null);
-			// TODO: decide if check or call button should be drawn...
-			if (callButtonPressed)
-				canvas.drawBitmap(checkButtonDown, buttonX + buttonW + 10,
-						buttonY, null);
-			else
-				canvas.drawBitmap(checkButtonUp, buttonX + buttonW + 10,
-						buttonY, null);
-			// TODO: decide if bet or raise button should be drawn...
-			if (betButtonPressed)
-				canvas.drawBitmap(betButtonDown, buttonX + 2 * buttonW + 20,
-						buttonY, null);
-			else
-				canvas.drawBitmap(betButtonUp, buttonX + 2 * buttonW + 20,
-						buttonY, null);
+			foldButton.draw(canvas);
+			checkButton.draw(canvas);
+			betButton.draw(canvas);
 
 			// draw the bet slider
 			canvas.drawLine(sliderStart, sliderY, sliderEnd, sliderY,
@@ -163,23 +153,26 @@ public class GameView extends View {
 		int x = (int) evt.getX();
 		int y = (int) evt.getY();
 		// TODO: only check if player's turn...allow queuing moves?
-		if(bitmapsLoaded) {
+		if (bitmapsLoaded) {
 			switch (action) {
 			case MotionEvent.ACTION_DOWN:
-				if (detectCollision(foldButtonUp, buttonX, buttonY, x, y))
-					foldButtonPressed = true;
-				else if (detectCollision(callButtonUp, buttonX + buttonW + 10,
-						buttonY, x, y))
-					callButtonPressed = true;
-				else if (detectCollision(betButtonUp, buttonX + 2 * buttonW + 20,
-						buttonY, x, y))
-					betButtonPressed = true;
-				else if(y > sliderY - 20 && y < sliderY + 20 && x > sliderStart && x < sliderEnd) {
+				if (foldButton.detectCollision(x, y))
+					foldButton.setPressed(true);
+				else if (checkButton.detectCollision(x, y))
+					checkButton.setPressed(true);
+				else if (callButton.detectCollision(x, y))
+					callButton.setPressed(true);
+				else if (betButton.detectCollision(x, y))
+					betButton.setPressed(true);
+				else if (raiseButton.detectCollision(x, y))
+					raiseButton.setPressed(true);
+				else if (y > sliderY - 20 && y < sliderY + 20
+						&& x > sliderStart && x < sliderEnd) {
 					sliderPressed = true;
 				}
 				break;
 			case MotionEvent.ACTION_MOVE:
-				if(sliderPressed) {
+				if (sliderPressed) {
 					if (x < sliderStart)
 						sliderX = sliderStart;
 					else if (x > sliderEnd)
@@ -189,19 +182,19 @@ public class GameView extends View {
 				}
 				break;
 			case MotionEvent.ACTION_UP:
-				if (foldButtonPressed) {
-					game.getUser().fold();
-					game.dealNextCard();
-					foldButtonPressed = false;
-				} else if (callButtonPressed) {
-					game.getUser().call(0);
-					game.dealNextCard();
-					callButtonPressed = false;
-				} else if (betButtonPressed) {
-					game.getUser().bet(10);
-					game.dealNextCard();
-					betButtonPressed = false;
-				}  else if (sliderPressed) {
+				if (foldButton.isPressed()) {
+					foldButton.setPressed(false);
+				} else if (checkButton.isPressed()) {
+					checkButton.setPressed(false);
+				} else if (callButton.isPressed()) {
+					callButton.setPressed(false);
+				} else if (betButton.isPressed()) {
+					betButton.setPressed(false);
+				} else if (raiseButton.isPressed()) {
+					raiseButton.setPressed(false);
+				}
+
+				else if (sliderPressed) {
 					sliderPressed = false;
 				}
 				break;
@@ -209,18 +202,6 @@ public class GameView extends View {
 			invalidate();
 		}
 		return true;
-	}
-
-	/**
-	 * Rectangular collision detection for a bitmap and specified coordinates.
-	 * 
-	 * @return true if collision. otherwise false
-	 */
-	private boolean detectCollision(Bitmap bitmap, int left, int top, int evtX,
-			int evtY) {
-
-		return evtX > left && evtX < bitmap.getWidth() + left && evtY > top
-				&& evtY < bitmap.getHeight() + top;
 	}
 
 	/**
@@ -232,8 +213,8 @@ public class GameView extends View {
 	private class BitmapLoader extends AsyncTask<Void, Integer, Boolean> {
 
 		// fields used to calculate progress
-		private final float TOTAL_BITMAPS = 61;
-		private int PROCESSED_BITMAPS = 0;
+		private static final int PROGRESS_INCREMENT = (int) (1.0 / 61 * 100);
+		private int CURRENT_PROGRESS = 0;
 
 		@Override
 		protected Boolean doInBackground(Void... params) {
@@ -247,27 +228,31 @@ public class GameView extends View {
 			for (Card c : cards) {
 				int resId = getResources().getIdentifier("card" + c.getId(),
 						"drawable", "ecv.poker");
-				c.setBitmap(getScaledBitmap(resId, cardW, cardH));
+				c.setBitmap(getScaledBitmap(c.getBitmap(), resId, cardW, cardH));
 			}
-			cardBack = getScaledBitmap(R.drawable.card_back, cardW, cardH);
+			cardBack = getScaledBitmap(cardBack, R.drawable.card_back, cardW,
+					cardH);
 
-			foldButtonUp = getScaledBitmap(R.drawable.fold_button_up, buttonW,
-					buttonH);
-			checkButtonUp = getScaledBitmap(R.drawable.check_button_up,
-					buttonW, buttonH);
-			callButtonUp = getScaledBitmap(R.drawable.call_button_up, buttonW,
-					buttonH);
-			betButtonUp = getScaledBitmap(R.drawable.bet_button_up, buttonW,
-					buttonH);
-
-			foldButtonDown = getScaledBitmap(R.drawable.fold_button_down,
-					buttonW, buttonH);
-			checkButtonDown = getScaledBitmap(R.drawable.check_button_down,
-					buttonW, buttonH);
-			callButtonDown = getScaledBitmap(R.drawable.call_button_down,
-					buttonW, buttonH);
-			betButtonDown = getScaledBitmap(R.drawable.bet_button_down,
-					buttonW, buttonH);
+			foldButton.setDown(getScaledBitmap(foldButton.getDown(),
+					R.drawable.fold_button_down, buttonW, buttonH));
+			foldButton.setUp(getScaledBitmap(foldButton.getUp(),
+					R.drawable.fold_button_up, buttonW, buttonH));
+			checkButton.setDown(getScaledBitmap(checkButton.getDown(),
+					R.drawable.check_button_down, buttonW, buttonH));
+			checkButton.setUp(getScaledBitmap(checkButton.getUp(),
+					R.drawable.check_button_up, buttonW, buttonH));
+			callButton.setDown(getScaledBitmap(callButton.getDown(),
+					R.drawable.call_button_down, buttonW, buttonH));
+			callButton.setUp(getScaledBitmap(callButton.getUp(),
+					R.drawable.call_button_up, buttonW, buttonH));
+			betButton.setDown(getScaledBitmap(betButton.getDown(),
+					R.drawable.bet_button_down, buttonW, buttonH));
+			betButton.setUp(getScaledBitmap(betButton.getUp(),
+					R.drawable.bet_button_up, buttonW, buttonH));
+//			raiseButton.setDown(getScaledBitmap(raiseButton.getDown(),
+//					R.drawable.raise_button_down, buttonW, buttonH));
+//			raiseButton.setUp(getScaledBitmap(raiseButton.getUp(),
+//					R.drawable.raise_button_up, buttonW, buttonH));
 
 			return true;
 		}
@@ -285,20 +270,30 @@ public class GameView extends View {
 		}
 
 		/**
-		 * Load a bitmap and scale it while updating progress for UI
+		 * Scale the target bitmap. Only loads the bitmap if target is null, and
+		 * only scales if the target dimensions differ from the scaled
 		 * 
+		 * @param target
 		 * @param resId
 		 * @param scaledW
 		 * @param scaledH
-		 * @return Bitmap scaled to requested width and height
+		 * @return
 		 */
-		private Bitmap getScaledBitmap(int resId, int scaledW, int scaledH) {
-			Bitmap bmp = BitmapFactory.decodeResource(getResources(), resId);
-			bmp = Bitmap.createScaledBitmap(bmp, scaledW, scaledH, false);
-			int progress = (int) (PROCESSED_BITMAPS / TOTAL_BITMAPS * 100);
-			PROCESSED_BITMAPS++;
-			publishProgress(progress);
-			return bmp;
+		private Bitmap getScaledBitmap(Bitmap target, int resId, int scaledW,
+				int scaledH) {
+			publishProgress(CURRENT_PROGRESS);
+			CURRENT_PROGRESS += PROGRESS_INCREMENT;
+			if (target == null) {
+				Bitmap bmp = BitmapFactory
+						.decodeResource(getResources(), resId);
+				return Bitmap.createScaledBitmap(bmp, scaledW, scaledH, false);
+			} else if (target.getWidth() != scaledW
+					&& target.getHeight() != scaledH) {
+				return Bitmap.createScaledBitmap(target, scaledW, scaledH,
+						false);
+			} else {
+				return target;
+			}
 		}
 	}
 }
