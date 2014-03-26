@@ -23,6 +23,8 @@ public class GameView extends View {
 	// width:height ratios of bitmaps
 	private static final float BUTTON_RATIO = 412f / 162;
 	private static final float CARD_RATIO = 222f / 284;
+	// padding between cards and buttons
+	private static final int PADDING = 10;
 	
 	private Bitmap cardBack;
 	private MyButton foldButton, checkButton, callButton, betButton, raiseButton;
@@ -71,15 +73,9 @@ public class GameView extends View {
 		screenH = h;
 		screenW = w;
 
-		// Get dimensions of bitmaps to set scales
-		cardW = screenW / 6;
+		// Get dimensions of bitmaps to set scales - fit 5 cards across screen
+		cardW = (screenW - 5 * PADDING) / 5;
 		cardH = (int) (cardW / CARD_RATIO);
-		
-		buttonW = screenW / 4;
-		buttonH = (int) (buttonW / BUTTON_RATIO);
-
-		// Load bitmaps asynchronously on a background thread
-		new BitmapLoader().execute();
 
 		// set things like cards and chip labels relative to table
 		table.set(0, cardH, screenW, cardH + screenH / 2);
@@ -87,21 +83,35 @@ public class GameView extends View {
 		compCardsY = (int) table.top - cardH / 2;
 		playerCardsX = (int) table.left + 50;
 		playerCardsY = (int) table.bottom - cardH / 2;
-		communityX = (int) (table.right + table.left) / 5 - cardW + 5;
+		communityX = (int) (table.right + table.left) / 5 - cardW + PADDING / 2;
 		communityY = (int) (table.top + table.bottom) / 2 - cardH / 2;
 
-		int buttonX = 10;
-		int buttonY = screenH - buttonH - 200;
-		foldButton.setXY(buttonX, buttonY);
-		checkButton.setXY(foldButton.getX() + buttonW + 10, buttonY);
-		callButton.setXY(checkButton.getX(), buttonY);
-		betButton.setXY(callButton.getX() + buttonW + 10, buttonY);
-		raiseButton.setXY(betButton.getX(), buttonY);
-
+		// slider oriented along bottom, takes up 90% width
 		slider.setY(screenH - 100);
 		slider.setStartX(screenW / 10);
 		slider.setStopX(9 * slider.getStartX());
 		slider.setCurX(slider.getStartX());
+		
+		// fit 4 buttons across screen
+		buttonW = (screenW - 4 * PADDING) / 4;
+		buttonH = (int) (buttonW / BUTTON_RATIO);
+		
+		// buttons above slider, aligned horizontally
+		foldButton.setX(PADDING);
+		foldButton.setY(slider.getY() - 2 * buttonH);
+		
+		checkButton.setX(foldButton.getX() + buttonW + PADDING);
+		checkButton.setY(foldButton.getY());
+		callButton.setX(checkButton.getX());
+		callButton.setY(checkButton.getY());
+		
+		betButton.setX(callButton.getX() + buttonW + PADDING);
+		betButton.setY(callButton.getY());
+		raiseButton.setX(betButton.getX());
+		raiseButton.setY(betButton.getY());
+
+		// Load bitmaps asynchronously on a background thread
+		new BitmapLoader().execute();
 	}
 
 	@Override
@@ -110,22 +120,22 @@ public class GameView extends View {
 		if (bitmapsLoaded) {
 			// draw player, computer, and community cards
 			for (int i = 0; i < game.getBot().getCards().size(); i++) {
-				canvas.drawBitmap(cardBack, compCardsX - i * (cardW + 10),
+				canvas.drawBitmap(cardBack, compCardsX - i * (cardW + PADDING),
 						compCardsY, null);
 			}
 			for (int i = 0; i < game.getUser().getCards().size(); i++) {
 				canvas.drawBitmap(game.getUser().getCards().get(i).getBitmap(),
-						playerCardsX + i * (cardW + 10), playerCardsY, null);
+						playerCardsX + i * (cardW + PADDING), playerCardsY, null);
 			}
 			for (int i = 0; i < game.getCommunityCards().size(); i++) {
 				canvas.drawBitmap(game.getCommunityCards().get(i).getBitmap(),
-						communityX + i * (cardW + 10), communityY, null);
+						communityX + i * (cardW + PADDING), communityY, null);
 			}
 
 			// draw chip counts
 			canvas.drawText(game.getUser().getChips() + "", playerCardsX
-					+ cardW + 5, playerCardsY + cardH + whitePaint.getFontSpacing(), whitePaint);
-			canvas.drawText(game.getBot().getChips() + "", compCardsX - 5,
+					+ cardW + PADDING / 2, playerCardsY + cardH + whitePaint.getFontSpacing(), whitePaint);
+			canvas.drawText(game.getBot().getChips() + "", compCardsX - PADDING / 2,
 					compCardsY + cardH + whitePaint.getFontSpacing(), whitePaint);
 			canvas.drawText(game.getPot() + "", (table.left + table.right) / 2,
 					communityY + cardH + whitePaint.getFontSpacing(), whitePaint);
@@ -136,7 +146,7 @@ public class GameView extends View {
 			slider.draw(canvas, whitePaint);
 			
 			// draw value of the bet
-			int betValX = betButton.getX() + buttonW + buttonW / 2 - 20;
+			int betValX = betButton.getX() + (int) (buttonW * 1.5);
 			int betValY = betButton.getY() + (int) whitePaint.getFontSpacing();
 			canvas.drawText(slider.getCurVal() + "", betValX, betValY, whitePaint);
 		}
@@ -196,8 +206,8 @@ public class GameView extends View {
 	private class BitmapLoader extends AsyncTask<Void, Integer, Boolean> {
 
 		// fields used to calculate progress (61 bitmaps being loaded)
-		private static final int PROGRESS_INCREMENT = (int) (1.0 / 61 * 100);
-		private int CURRENT_PROGRESS = 0;
+		private static final float PROGRESS_INCREMENT = 1f / 61 * 100;
+		private float CURRENT_PROGRESS = 0;
 
 		@Override
 		protected Boolean doInBackground(Void... params) {
@@ -264,7 +274,7 @@ public class GameView extends View {
 		 */
 		private Bitmap getScaledBitmap(Bitmap target, int resId, int scaledW,
 				int scaledH) {
-			publishProgress(CURRENT_PROGRESS);
+			publishProgress((int) CURRENT_PROGRESS);
 			CURRENT_PROGRESS += PROGRESS_INCREMENT;
 			if (target == null) {
 				Bitmap bmp = BitmapFactory

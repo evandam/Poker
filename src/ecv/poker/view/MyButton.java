@@ -15,7 +15,7 @@ public class MyButton {
 	private Bitmap up, down;
 	private int x, y;
 	private boolean isPressed;
-	
+
 	/**
 	 * Set the pressed flag to true if event is inside the button.
 	 * @param evtX
@@ -61,10 +61,6 @@ public class MyButton {
 		return y;
 	}
 	public void setY(int y) {
-		this.y = y;
-	}
-	public void setXY(int x, int y) {
-		this.x = x;
 		this.y = y;
 	}
 	public boolean isPressed() {

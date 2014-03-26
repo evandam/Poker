@@ -34,7 +34,7 @@ public class Slider {
 		canvas.drawText(maxVal + "", stopX, y + radius + paint.getFontSpacing(), paint);
 		canvas.drawLine(startX, y, stopX, y, paint);
 		if(isPressed)
-			canvas.drawCircle(curX, y, 2 * radius, paint);
+			canvas.drawCircle(curX, y, 1.5f * radius, paint);
 		else
 			canvas.drawCircle(curX, y, radius, paint);
 	}

@@ -47,8 +47,10 @@ public class TitleView extends View {
 		settingsButton.setDown(getScaledBitmap(R.drawable.settings_button_down, buttonW, buttonH));
 		
 		// set the position of the buttons
-		playButton.setXY(screenW / 2 - buttonW / 2, 3 * screenH / 4 - buttonH);
-		settingsButton.setXY(playButton.getX(), playButton.getY() + buttonH + 10);		
+		playButton.setX(screenW / 2 - buttonW / 2);
+		playButton.setY(3 * screenH / 4 - buttonH);
+		settingsButton.setX(playButton.getX());
+		settingsButton.setY(playButton.getY() + buttonH + 10);		
 	}
 
 	@Override
