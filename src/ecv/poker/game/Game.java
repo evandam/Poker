@@ -44,8 +44,7 @@ public class Game {
 				deck.add(new Card(i + j));
 			}
 		}
-		myTurn = true;
-		// myTurn = random.nextBoolean();
+		myTurn = random.nextBoolean();
 	}
 
 	public boolean isMyTurn() {
@@ -164,7 +163,8 @@ public class Game {
 		}
 		prevAction = null;
 		curAction = null;
-		myTurn = true;	// TODO: handle bot going first
+		if(!myTurn)
+			makeBotPlay();
 	}
 
 	public Card deal() {
