@@ -63,7 +63,7 @@ public class Slider {
 		this.y = y;
 	}
 
-	public int getCurVal() {
+	public int getVal() {
 		// somewhere between 0 and 1.0
 		float multiplier = (float) (curX - startX) / (stopX - startX);
 		return (int) (multiplier * (maxVal - minVal)) + minVal;

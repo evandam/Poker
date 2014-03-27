@@ -34,40 +34,55 @@ public class Player {
 	public void addChips(int i) {
 		chips += i;
 	}
-
+	
 	/**
-	 * Put player's chips into pot if they have enough to cover the bet.
-	 * 
-	 * @param number
-	 *            of chips to bet
+	 * No action. Nothing to call or bet
 	 */
-	public void bet(int bet) {
-		if (chips >= bet) {
-			chips -= bet;
-			game.addToPot(bet);
-		}
+	public void check() {
+		game.setAction(Game.Action.CHECK);
 	}
-
+	
 	/**
-	 * Call the current bet. If it is more than the player has, put them all in.
-	 * Note that a "check" is the equivalent of calling 0.
+	 * Call the current bet and deduct from chip stack
 	 * @param bet
 	 */
-	public void call(int bet) {
-		if(chips > bet) {
-			game.addToPot(bet);
-			chips -= bet;			
-		} else {
-			game.addToPot(chips);
-			chips = 0;
-		}
+	public void call() {
+		game.addToPot(game.getCurBet());
+		chips -= game.getCurBet();	
+		game.setAction(Game.Action.CALL);
+		game.setCurBet(0);
 	}
 
 	/**
-	 * Throw away player's cards. Ends hand assuming 2 players
+	 * Set the current bet, add to pot and deduct from chip stack
+	 * @param bet
+	 */
+	public void bet(int bet) {
+		chips -= bet;
+		game.addToPot(bet);
+		game.setCurBet(bet);
+		game.setAction(Game.Action.BET);
+	}
+	
+	/**
+	 * Call the current bet and raise additional
+	 * @param raise
+	 */
+	public void raise(int raise) {
+		int total = game.getCurBet() + raise;
+		chips -= total;
+		game.addToPot(total);
+		game.setCurBet(raise);
+		game.setAction(Game.Action.RAISE);
+	}
+
+	/**
+	 * Throw away player's cards.
 	 */
 	public void fold() {
 		cards.clear();
+		game.setAction(Game.Action.FOLD);
+		game.setCurBet(0);
 	}
 
 	/**
