@@ -153,17 +153,39 @@ public class GameView extends View {
 			canvas.drawText(game.getPot() + "", (table.left + table.right) / 2,
 					communityY + cardH + whitePaint.getFontSpacing(), whitePaint);
 
-			foldButton.draw(canvas);
-			if(game.getCurBet() == 0) {
-				checkButton.draw(canvas);
-				betButton.draw(canvas);
-			} else {
-				callButton.draw(canvas);
-				raiseButton.draw(canvas);
+			// disabled buttons aren't drawn and no collisions detected
+			// better place to put these?
+			if(!game.isMyTurn()) {
+				foldButton.disable();
+				checkButton.disable();
+				callButton.disable();
+				betButton.disable();
+				raiseButton.disable();
 			}
+			else if(game.getCurBet() == 0) {
+				foldButton.enable();
+				checkButton.enable();
+				callButton.disable();
+				betButton.enable();
+				raiseButton.disable();
+			} else {
+				foldButton.enable();
+				checkButton.disable();
+				callButton.enable();
+				betButton.disable();
+				raiseButton.enable();
+			}
+			foldButton.draw(canvas);
+			checkButton.draw(canvas);
+			callButton.draw(canvas);
+			betButton.draw(canvas);
+			raiseButton.draw(canvas);
 			
-			// make sure bet values are in correct range
-			slider.setMinVal(game.getCurBet());
+			// make sure bet values are in correct range - either match current bet or min of big blind
+			if(game.getCurBet() == 0)
+				slider.setMinVal(game.getAnte() * 2);
+			else
+				slider.setMinVal(game.getCurBet());
 			if(game.getBot().getChips() > game.getUser().getChips())
 				slider.setMaxVal(game.getUser().getChips());
 			else
@@ -182,63 +204,59 @@ public class GameView extends View {
 		int x = (int) evt.getX();
 		int y = (int) evt.getY();
 
-		if(game.isMyTurn()) {
-			switch (action) {
-			case MotionEvent.ACTION_DOWN:
-				foldButton.detectCollision(x, y);
-				checkButton.detectCollision(x, y);
-				callButton.detectCollision(x, y);
-				betButton.detectCollision(x, y);
-				raiseButton.detectCollision(x, y);
-				slider.detectCollision(x, y);
-				if(slider.isPressed())
-					slider.setCurX(x);
-				break;
-			case MotionEvent.ACTION_MOVE:
-				if (slider.isPressed())
-					slider.setCurX(x);
-				break;
-			case MotionEvent.ACTION_UP:
-				// perform actions here...
-				if (foldButton.isPressed()) {
-					game.getUser().fold();
-					game.setMyTurn(false);
-					game.makeNextMove();
-					slider.setCurX(slider.getStartX());
-					foldButton.setPressed(false);
-				} else if (checkButton.isPressed()) {
-					game.getUser().check();
-					game.setMyTurn(false);
-					game.makeNextMove();
-					slider.setCurX(slider.getStartX());
-					checkButton.setPressed(false);
-				} else if (callButton.isPressed()) {
-					game.getUser().call();
-					game.setMyTurn(false);
-					game.makeNextMove();
-					slider.setCurX(slider.getStartX());
-					callButton.setPressed(false);
-				} else if (betButton.isPressed()) {
-					game.getUser().bet(slider.getVal());
-					game.setMyTurn(false);
-					game.makeNextMove();
-					slider.setCurX(slider.getStartX());
-					betButton.setPressed(false);
-				} else if (raiseButton.isPressed()) {
-					game.getUser().raise(slider.getVal());
-					game.setMyTurn(false);
-					game.makeNextMove();
-					slider.setCurX(slider.getStartX());
-					raiseButton.setPressed(false);
-				} else if (slider.isPressed()) {
-					slider.setPressed(false);
-				}
-				break;
+		switch (action) {
+		case MotionEvent.ACTION_DOWN:
+			foldButton.detectCollision(x, y);
+			checkButton.detectCollision(x, y);
+			callButton.detectCollision(x, y);
+			betButton.detectCollision(x, y);
+			raiseButton.detectCollision(x, y);
+			slider.detectCollision(x, y);
+			if(slider.isPressed())
+				slider.setCurX(x);
+			break;
+		case MotionEvent.ACTION_MOVE:
+			if (slider.isPressed())
+				slider.setCurX(x);
+			break;
+		case MotionEvent.ACTION_UP:
+			// perform actions here...
+			if (foldButton.isPressed()) {
+				game.getUser().fold();
+				game.setMyTurn(false);
+				game.makeNextMove();
+				slider.setCurX(slider.getStartX());					
+			} else if (checkButton.isPressed()) {
+				game.getUser().check();
+				game.setMyTurn(false);
+				game.makeNextMove();
+				slider.setCurX(slider.getStartX());					
+			} else if (callButton.isPressed()) {
+				game.getUser().call();
+				game.setMyTurn(false);
+				game.makeNextMove();
+				slider.setCurX(slider.getStartX());					
+			} else if (betButton.isPressed()) {
+				game.getUser().bet(slider.getVal());
+				game.setMyTurn(false);
+				game.makeNextMove();
+				slider.setCurX(slider.getStartX());					
+			} else if (raiseButton.isPressed()) {
+				game.getUser().raise(slider.getVal());
+				game.setMyTurn(false);
+				game.makeNextMove();
+				slider.setCurX(slider.getStartX());					
 			}
-			invalidate();
-		} else 
-			Toast.makeText(context, "Wait your turn!", Toast.LENGTH_SHORT).show();
-		
+			foldButton.setPressed(false);
+			checkButton.setPressed(false);
+			callButton.setPressed(false);
+			betButton.setPressed(false);
+			raiseButton.setPressed(false);
+			slider.setPressed(false);
+			break;
+		}
+		invalidate();
+
 		return true;
 	}
 

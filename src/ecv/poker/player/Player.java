@@ -36,10 +36,20 @@ public class Player {
 	}
 	
 	/**
+	 * Throw away player's cards.
+	 */
+	public void fold() {
+		cards.clear();
+		game.setAction(Game.Action.FOLD);
+		game.setCurBet(0);
+	}
+
+	/**
 	 * No action. Nothing to call or bet
 	 */
 	public void check() {
 		game.setAction(Game.Action.CHECK);
+		game.setCurBet(0);
 	}
 	
 	/**
@@ -62,6 +72,7 @@ public class Player {
 		game.addToPot(bet);
 		game.setCurBet(bet);
 		game.setAction(Game.Action.BET);
+		game.setCurBet(bet);
 	}
 	
 	/**
@@ -69,20 +80,10 @@ public class Player {
 	 * @param raise
 	 */
 	public void raise(int raise) {
-		int total = game.getCurBet() + raise;
-		chips -= total;
-		game.addToPot(total);
+		chips -= raise;
+		game.addToPot(raise);
 		game.setCurBet(raise);
 		game.setAction(Game.Action.RAISE);
-	}
-
-	/**
-	 * Throw away player's cards.
-	 */
-	public void fold() {
-		cards.clear();
-		game.setAction(Game.Action.FOLD);
-		game.setCurBet(0);
 	}
 
 	/**

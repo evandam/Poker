@@ -6,7 +6,7 @@ import java.util.List;
 
 /**
  * Utility class to evaluate a player's hand. 
- * 
+ * TODO: bitwise AND instead of mod division!
  * @author Evan
  * 
  */

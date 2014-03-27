@@ -32,6 +32,7 @@ public class Game {
 	private int curBet;
 	private boolean myTurn;
 	private Action prevAction, curAction;
+	private int ante;	// TODO: implement blinds?
 
 	public Game() {
 		random = new Random();
@@ -45,6 +46,157 @@ public class Game {
 			}
 		}
 		myTurn = random.nextBoolean();
+		ante = 5;	// arbitrary for now...
+	}
+
+	/**
+	 * Deal out cards to players and start the round
+	 */
+	public void setupHand() {
+		Collections.shuffle(deck, random);
+		for (int i = 0; i < 2; i++) {
+			user.getCards().add(deal());
+			bot.getCards().add(deal());
+		}
+		// post antes
+		pot = 0;
+		user.bet(ante);
+		bot.bet(ante);
+		curBet = 0;
+		if(!myTurn) 
+			makeBotPlay();
+	}
+
+	/**
+	 * Deal next card if applicable, and make the bot play
+	 */
+	public void makeNextMove() {
+		// end hand if either folds (since 2 player)
+		if(curAction == Action.FOLD) 
+			endHand();
+		else {
+			dealNextCard();
+			if(!myTurn) 
+				makeBotPlay();
+		}
+	}
+
+	/**
+	 * This is where AI logic will go.
+	 * For now, always check/call when possible.
+	 */
+	public void makeBotPlay() {
+		// delay for testing (terrible idea in UI thread)
+		try {
+			Thread.sleep(1000);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		if(curBet == 0)
+			bot.check();
+		else
+			bot.call();
+		
+		myTurn = true;
+		makeNextMove();
+	}
+
+	/**
+	 * Flop deals out 3 cards at same time,
+	 * Turn and river only deal one
+	 * End the hand if all 5 cards are already dealt
+	 */
+	public void dealNextCard() {
+		if(isBettingDone()) {
+			// starts a new round of betting, clear out previous actions
+			prevAction = null;
+			curAction = null;
+			curBet = 0;
+			
+			if (communityCards.size() < 3) {
+				communityCards.add(deal());
+				communityCards.add(deal());
+				communityCards.add(deal());
+			} else if(communityCards.size() < 5)
+				communityCards.add(deal());
+			else
+				endHand();
+		}
+	}
+
+	/**
+	 * A round of betting is complete when the last action is a check or call. A
+	 * new card needs to come out or its the end of the hand.
+	 * 
+	 * @return
+	 */
+	public boolean isBettingDone() {
+		// a player calls another's bet, or they both check
+		return prevAction == Action.BET && curAction == Action.CALL || 
+				prevAction == Action.CHECK && curAction == Action.CHECK;
+	}
+
+	/**
+	 * List because there is a chance that it is a split pot.
+	 * 
+	 * @return list of players who won the pot.
+	 */
+	public List<Player> getWinners() {
+		List<Player> winners = new ArrayList<Player>();
+		List<Card> userCards, botCards;
+		// check if player folded
+		if(user.getCards().size() > 0) {
+			userCards = new ArrayList<Card>(user.getCards());
+			userCards.addAll(communityCards);
+		} else {
+			winners.add(bot);
+			return winners;
+		} 
+		// check if computer folded
+		if(bot.getCards().size() > 0) {
+			botCards = new ArrayList<Card>(bot.getCards());
+			botCards.addAll(communityCards);
+		} else {
+			winners.add(user);
+			return winners;
+		}
+	
+		// players' hands need to be compared
+		int userRank = Evaluator.evaluate(userCards);
+		int botRank = Evaluator.evaluate(botCards);
+	
+		if (userRank >= botRank)
+			winners.add(user);
+		if (userRank <= botRank)
+			winners.add(bot);
+		return winners;
+	}
+
+	/**
+	 * Reset the deck, clear players' hands, award chips to the winner(s)
+	 * 
+	 * @return message to alert user of outcome
+	 */
+	public void endHand() {
+		List<Player> winners = getWinners();
+		// split pot evenly amongst winners
+		for (Player player : winners) {
+			player.addChips(pot / winners.size());
+		}
+		deck.addAll(user.getCards());
+		deck.addAll(bot.getCards());
+		deck.addAll(communityCards);
+		user.getCards().clear();
+		bot.getCards().clear();
+		communityCards.clear();
+		// as long as both players have chips, continue
+		if(user.getChips() > 0 && bot.getChips() > 0)
+			setupHand();
+	}
+
+	public Card deal() {
+		return deck.remove(deck.size() - 1);
 	}
 
 	public boolean isMyTurn() {
@@ -65,6 +217,14 @@ public class Game {
 
 	public Player getBot() {
 		return bot;
+	}
+
+	public int getAnte() {
+		return ante;
+	}
+
+	public void setAnte(int ante) {
+		this.ante = ante;
 	}
 
 	public List<Card> getCommunityCards() {
@@ -91,87 +251,6 @@ public class Game {
 	}
 
 	/**
-	 * Deal next card if applicable, and make the bot play
-	 */
-	public void makeNextMove() {
-		// end hand if either folds (since 2 player)
-		if(curAction == Action.FOLD) 
-			endHand();
-		else {
-			dealNextCard();
-			if(!myTurn) 
-				makeBotPlay();
-		}
-	}
-	
-	/**
-	 * This is where AI logic will go.
-	 * For now, always check/call when possible.
-	 */
-	public void makeBotPlay() {
-		if(curBet == 0)
-			bot.check();
-		else
-			bot.call();
-		
-		myTurn = true;
-		makeNextMove();
-	}
-
-	/**
-	 * A round of betting is complete when the last action is a check or call. A
-	 * new card needs to come out or its the end of the hand.
-	 * 
-	 * @return
-	 */
-	public boolean isBettingDone() {
-		// a player folds, a player calls another's bet, or they both check
-		return curAction == Action.FOLD || curAction == Action.CALL
-				|| curAction == Action.CHECK && prevAction == Action.CHECK;
-	}
-
-	/**
-	 * Flop deals out 3 cards at same time,
-	 * Turn and river only deal one
-	 * End the hand if all 5 cards are already dealt
-	 */
-	public void dealNextCard() {
-		if(isBettingDone()) {
-			// starts a new round of betting, clear out previous actions
-			prevAction = null;
-			curAction = null;
-			
-			if (communityCards.size() < 3) {
-				communityCards.add(deal());
-				communityCards.add(deal());
-				communityCards.add(deal());
-			} else if(communityCards.size() < 5)
-				communityCards.add(deal());
-			else
-				endHand();
-		}
-	}
-
-	/**
-	 * Deal out cards to players and start the round
-	 */
-	public void setupHand() {
-		Collections.shuffle(deck, random);
-		for (int i = 0; i < 2; i++) {
-			user.getCards().add(deal());
-			bot.getCards().add(deal());
-		}
-		prevAction = null;
-		curAction = null;
-		if(!myTurn)
-			makeBotPlay();
-	}
-
-	public Card deal() {
-		return deck.remove(deck.size() - 1);
-	}
-
-	/**
 	 * Set the current action, The old value of curAction is sent to prevAction
 	 * 
 	 * @param action
@@ -179,51 +258,5 @@ public class Game {
 	public void setAction(Action action) {
 		prevAction = curAction;
 		curAction = action;
-	}
-
-	/**
-	 * List because there is a chance that it is a split pot.
-	 * 
-	 * @return list of players who won the pot.
-	 */
-	public List<Player> getWinners() {
-		List<Player> winners = new ArrayList<Player>();
-
-		List<Card> userCards = new ArrayList<Card>(user.getCards());
-		userCards.addAll(communityCards);
-		List<Card> botCards = new ArrayList<Card>(bot.getCards());
-		botCards.addAll(communityCards);
-
-		int userRank = Evaluator.evaluate(userCards);
-		int botRank = Evaluator.evaluate(botCards);
-
-		if (userRank >= botRank)
-			winners.add(user);
-		if (userRank <= botRank)
-			winners.add(bot);
-		return winners;
-	}
-
-	/**
-	 * Reset the deck, clear players' hands, award chips to the winner(s), and
-	 * reset the pot.
-	 * 
-	 * @return message to alert user of outcome
-	 */
-	public void endHand() {
-		List<Player> winners = getWinners();
-		for (Player player : winners) {
-			player.addChips(pot / winners.size());
-		}
-		pot = 0;
-		deck.addAll(user.getCards());
-		deck.addAll(bot.getCards());
-		deck.addAll(communityCards);
-		user.getCards().clear();
-		bot.getCards().clear();
-		communityCards.clear();
-		// as long as both players have chips, continue
-		if(user.getChips() > 0 && bot.getChips() > 0)
-			setupHand();
 	}
 }
