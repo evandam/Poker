@@ -272,10 +272,8 @@ public class GameView extends View {
 		private static final float PROGRESS_INCREMENT = 1f / 61 * 100;
 		private float CURRENT_PROGRESS = 0;
 
-		// TODO: shouldn't set these off-thread?
-		// TODO: Input: Set of resource IDs
+		// TODO: Input: Set of resource IDs (including scales depending on obj)
 		// 	 Output: Map of resource IDs to Bitmaps
-		//	 Scales set in onSizeChanged
 		@Override
 		protected Boolean doInBackground(Void... params) {
 			// get one list of all cards, regardless of where they are in the
