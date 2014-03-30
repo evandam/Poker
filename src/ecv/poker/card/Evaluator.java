@@ -112,6 +112,15 @@ public class Evaluator {
 		}
 		return bestCards;
 	}
+	
+	/* ----------------------------------------------------------
+	 * Methods to identify the hand and get a value (in hex):
+	 * Most significant digit is always 0xf00000, set by << 20
+	 * Remaining digits set according to the type of hand,
+	 * But represent cards in the hand, such as the value of a pair,
+	 * High card in a straight, kickers, etc.
+	 * ----------------------------------------------------------
+	 */
 
 	/**
 	 * 

@@ -272,6 +272,7 @@ public class GameView extends View {
 		private static final float PROGRESS_INCREMENT = 1f / 61 * 100;
 		private float CURRENT_PROGRESS = 0;
 
+		// TODO: shouldn't set these off-thread?
 		@Override
 		protected Boolean doInBackground(Void... params) {
 			// get one list of all cards, regardless of where they are in the
