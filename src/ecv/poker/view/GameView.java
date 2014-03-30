@@ -273,7 +273,9 @@ public class GameView extends View {
 		private float CURRENT_PROGRESS = 0;
 
 		// TODO: shouldn't set these off-thread?
-		// TODO: see LruCache for managing bitmaps? cards and objects would only hold ResIds...
+		// TODO: Input: Set of resource IDs
+		// 	 Output: Map of resource IDs to Bitmaps
+		//	 Scales set in onSizeChanged
 		@Override
 		protected Boolean doInBackground(Void... params) {
 			// get one list of all cards, regardless of where they are in the
