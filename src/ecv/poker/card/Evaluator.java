@@ -44,25 +44,24 @@ public class Evaluator {
 			cards = getBestCards(cards);
 	
 		int val = 0;
-		if((val = getStraightFlush(cards))  > 0) {
+		if((val = getStraightFlush(cards))  > 0) 
 			return val;
-		} else if((val = getQuads(cards)) > 0) {
+		else if((val = getQuads(cards)) > 0) 
 			return val;
-		} else if((val = getFullHouse(cards)) > 0) {
+		else if((val = getFullHouse(cards)) > 0) 
 			return val;
-		} else if((val = getFlush(cards)) > 0) {
+		else if((val = getFlush(cards)) > 0) 
 			return val;
-		} else if((val = getStraight(cards)) > 0) {
+		else if((val = getStraight(cards)) > 0) 
 			return val;
-		} else if((val = getTrips(cards)) > 0) {
+		else if((val = getTrips(cards)) > 0) 
 			return val;
-		} else if((val = getTwoPair(cards)) > 0) {
+		else if((val = getTwoPair(cards)) > 0) 
 			return val;
-		} else if((val = getPair(cards)) > 0) {
+		else if((val = getPair(cards)) > 0) 
 			return val;
-		} else {
+		else 
 			return getHighCard(cards);
-		}
 	}
 
 	/**
@@ -177,6 +176,7 @@ public class Evaluator {
 		// parse out the rank of highest pair (4th digit)
 		int pair1 = getPair(cards);
 		if(pair1 > 0) {
+			// rank of pair stored in 4th digit
 			int pair1Val = (pair1 & 0xf000) >> 12; 
 			for(int i = 1; i < cards.size(); i++) {
 				int curRank = cards.get(i).getRank();
@@ -295,6 +295,7 @@ public class Evaluator {
 		// parse out rank of trips (3rd digit)
 		int trips = getTrips(cards);
 		if(trips != 0) {
+			// value of trips stored in 3rd digit
 			int tripsVal = (trips & 0xf00) >> 8;
 			// now get the pair
 			for(int i = 1; i < cards.size(); i++) {
@@ -346,6 +347,7 @@ public class Evaluator {
 		// parse out high card in straight (least significant digit)
 		int straight = getStraight(cards);
 		if(straight > 0 && getFlush(cards) > 0) {
+			// high card in straight stored in 1st digit of value
 			int straightVal = straight & 0xf;
 			int val = STRAIGHT_FLUSH << 20;
 			val += straightVal;
