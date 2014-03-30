@@ -6,7 +6,9 @@ import java.util.List;
 
 /**
  * Utility class to evaluate a player's hand. 
- * TODO: bitwise AND instead of mod division!
+ * The values used to compare hand ranks uses
+ * Hexadecimal digits to represent hand types and kickers,
+ * So bitwise operations can be used to evaluate and construct them.
  * @author Evan
  * 
  */
@@ -15,8 +17,6 @@ public class Evaluator {
 	public static final int HIGH_CARD = 0, ONE_PAIR = 1, TWO_PAIR = 2,
 			TRIPS = 3, STRAIGHT = 4, FLUSH = 5, FULL_HOUSE = 6, QUADS = 7,
 			STRAIGHT_FLUSH = 8;
-
-	private static final int rank_pos = 0x100000;
 	
 	/**
 	 * Get an evaluation of the cards that can be compared to others.
@@ -122,7 +122,7 @@ public class Evaluator {
 	private static int getHighCard(List<Card> cards) {
 		int val = 0;
 		for(int i = 0; i < cards.size(); i++) {
-			val += cards.get(i).getRank() * Math.pow(16, cards.size() - 1 - i);
+			val += cards.get(i).getRank() << 4 * (cards.size() - i - 1);
 		}
 		return val;
 	}
@@ -142,11 +142,12 @@ public class Evaluator {
 				for (int j = 1; j < cards.size() - 1; j++) {
 					kickers.add(cards.get((i + j) % cards.size()).getRank());
 				}
-				int val = ONE_PAIR * rank_pos;
-				val += curRank * 0x1000;	// 16^3
+				int val = ONE_PAIR << 20;	// put in highest digit
+				val += curRank << 12;	
 				Collections.sort(kickers);
+				// last 3 digits are kickers
 				for (int j = 0; j < kickers.size(); j++) {
-					val += kickers.get(j) * Math.pow(16, j);
+					val += kickers.get(j) << 4 * j;
 				}
 				return val;
 			}
@@ -165,22 +166,23 @@ public class Evaluator {
 	 */
 	private static int getTwoPair(List<Card> cards) {
 		// parse out the rank of highest pair (4th digit)
-		int pair1 = getPair(cards) % rank_pos / 0x1000;
+		int pair1 = getPair(cards);
 		if(pair1 > 0) {
+			int pair1Val = (pair1 & 0xf000) >> 12; 
 			for(int i = 1; i < cards.size(); i++) {
 				int curRank = cards.get(i).getRank();
-				if(curRank != pair1) {
+				if(curRank != pair1Val) {
 					// found second pair
 					if(cards.get(i - 1).getRank() == curRank) {
 						// find the kicker
 						int kicker = 0;
 						for(Card c : cards) {
-							if(c.getRank() != pair1 && c.getRank() != curRank)
+							if(c.getRank() != pair1Val && c.getRank() != curRank)
 								kicker = c.getRank();
 						}
-						int val = TWO_PAIR * rank_pos;
-						val += pair1 * 0x100;
-						val += curRank * 0x10;
+						int val = TWO_PAIR << 20;
+						val += pair1Val << 8;
+						val += curRank << 4;
 						val += kicker;
 						return val;
 					}
@@ -208,11 +210,11 @@ public class Evaluator {
 				for(int j = 1; j < cards.size() - 2; j++) {
 					kickers.add(cards.get((i + j) % cards.size()).getRank());
 				}
-				int val = TRIPS * rank_pos; 
-				val += curRank * 0x100;
+				int val = TRIPS << 20; 
+				val += curRank << 8;
 				Collections.sort(kickers);
 				for(int j = 0; j < kickers.size(); j++) {
-					val += kickers.get(j) * Math.pow(16, j);
+					val += kickers.get(j) << 4 * j;
 				}
 				return val;
 			}
@@ -242,7 +244,7 @@ public class Evaluator {
 				// 5-high straight for A-5, not ace...
 				if(cards.get(0).getRank() == 14 && cards.get(1).getRank() == 5)
 					highCard = 5;
-				int val = STRAIGHT * rank_pos;
+				int val = STRAIGHT << 20;
 				val += highCard;
 				return val;
 			}
@@ -264,10 +266,10 @@ public class Evaluator {
 					return 0;
 				else {
 					// add value as kicker. remember this is descending order
-					val += cards.get(i).getRank() * Math.pow(16, cards.size() - 1 - i);
+					val += cards.get(i).getRank() << 4 * (cards.size() - 1 - i);
 				}
 			}
-			val += FLUSH * rank_pos;
+			val += FLUSH << 20;
 			return val;
 		}
 		return 0;
@@ -282,15 +284,16 @@ public class Evaluator {
 	 */
 	private static int getFullHouse(List<Card> cards) {
 		// parse out rank of trips (3rd digit)
-		int trips = getTrips(cards) % rank_pos / 0x100;
+		int trips = getTrips(cards);
 		if(trips != 0) {
+			int tripsVal = (trips & 0xf00) >> 8;
 			// now get the pair
 			for(int i = 1; i < cards.size(); i++) {
 				int curRank = cards.get(i).getRank();
 				if(curRank == cards.get(i - 1).getRank() &&
-						curRank != trips) {
-					int val = FULL_HOUSE * rank_pos;
-					val += trips * 0x10;
+						curRank != tripsVal) {
+					int val = FULL_HOUSE << 20;
+					val += tripsVal << 4;
 					val += curRank;
 					return val;
 				}
@@ -312,8 +315,8 @@ public class Evaluator {
 			if(cards.get(i - 1).getRank() == curRank &&
 					cards.get(i - 2).getRank() == curRank &&
 					cards.get(i - 3).getRank() == curRank) {
-				int val = QUADS * rank_pos;
-				val += curRank * 0x10;
+				int val = QUADS << 20;
+				val += curRank << 4;
 				// kicker is the next card in the list
 				int kicker = cards.get((i + 1) % cards.size()).getRank();
 				if(kicker != val)
@@ -331,10 +334,11 @@ public class Evaluator {
 	 * Last digit is the highest card in straight
 	 */
 	private static int getStraightFlush(List<Card> cards) {
-		// parse out high card in straight (first digit)
-		int straightVal = getStraight(cards) % rank_pos;
-		if(straightVal > 0 && getFlush(cards) > 0) {
-			int val = STRAIGHT_FLUSH * rank_pos;
+		// parse out high card in straight (least significant digit)
+		int straight = getStraight(cards);
+		if(straight > 0 && getFlush(cards) > 0) {
+			int straightVal = straight & 0xf;
+			int val = STRAIGHT_FLUSH << 20;
 			val += straightVal;
 			return val;
 		}
