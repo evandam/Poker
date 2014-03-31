@@ -301,6 +301,11 @@ public class GameView extends View {
 
 		private float CURRENT_PROGRESS = 0;
 
+<<<<<<< HEAD
+=======
+		// TODO: Input: Set of resource IDs (including scales depending on obj)
+		// 	 Output: Map of resource IDs to Bitmaps
+>>>>>>> a789c19191d4210d2ecc0f0567c7e89209f64bdb
 		@Override
 		protected SparseArray<Bitmap> doInBackground(MyBitmap... params) {
 			SparseArray<Bitmap> loaded = new SparseArray<Bitmap>(params.length);
