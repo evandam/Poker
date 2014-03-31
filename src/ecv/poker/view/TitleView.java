@@ -20,12 +20,14 @@ public class TitleView extends View {
 	private Bitmap titleGraphic;
 	private MyButton playButton, settingsButton;
 	private int screenW, screenH;
+	private Bitmap playButtonUp, playButtonDown;
+	private Bitmap settingsButtonUp, settingsButtonDown;
 
 	public TitleView(Context context) {
 		super(context);
 		this.context = context;
-		playButton = new MyButton();
-		settingsButton = new MyButton();
+		playButton = new MyButton(R.drawable.play_button_up, R.drawable.play_button_down);
+		settingsButton = new MyButton(R.drawable.settings_button_up, R.drawable.settings_button_down);
 	}
 
 	@Override
@@ -41,10 +43,14 @@ public class TitleView extends View {
 
 		int buttonH = screenH / 7;
 		int buttonW = (int) (buttonH * BUTTON_RATIO);
-		playButton.setUp(getScaledBitmap(R.drawable.play_button_up, buttonW, buttonH));
-		playButton.setDown(getScaledBitmap(R.drawable.play_button_down, buttonW, buttonH));
-		settingsButton.setUp(getScaledBitmap(R.drawable.settings_button_up, buttonW, buttonH));
-		settingsButton.setDown(getScaledBitmap(R.drawable.settings_button_down, buttonW, buttonH));
+		playButtonUp = getScaledBitmap(playButton.getUpId(), buttonW, buttonH);
+		playButtonDown = getScaledBitmap(playButton.getDownId(), buttonW, buttonH);
+		playButton.setWidth(buttonW);
+		playButton.setHeight(buttonH);
+		settingsButtonUp = getScaledBitmap(settingsButton.getUpId(), buttonW, buttonH);
+		settingsButtonDown = getScaledBitmap(settingsButton.getDownId(), buttonW, buttonH);
+		settingsButton.setWidth(buttonW);
+		settingsButton.setHeight(buttonH);
 		
 		// set the position of the buttons
 		playButton.setX(screenW / 2 - buttonW / 2);
@@ -57,8 +63,15 @@ public class TitleView extends View {
 	protected void onDraw(Canvas canvas) {
 		// draw the title image
 		canvas.drawBitmap(titleGraphic, screenW / 2 - titleGraphic.getWidth() / 2, 0, null);
-		playButton.draw(canvas);
-		settingsButton.draw(canvas);
+		if(playButton.isPressed())
+			canvas.drawBitmap(playButtonDown, playButton.getX(), playButton.getY(), null);
+		else
+			canvas.drawBitmap(playButtonUp, playButton.getX(), playButton.getY(), null);
+		
+		if(settingsButton.isPressed())
+			canvas.drawBitmap(settingsButtonDown, settingsButton.getX(), settingsButton.getY(), null);
+		else
+			canvas.drawBitmap(settingsButtonUp, settingsButton.getX(), settingsButton.getY(), null);
 	}
 
 	@Override

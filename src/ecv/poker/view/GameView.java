@@ -12,9 +12,9 @@ import android.graphics.Paint;
 import android.graphics.Paint.Align;
 import android.graphics.RectF;
 import android.os.AsyncTask;
+import android.util.SparseArray;
 import android.view.MotionEvent;
 import android.view.View;
-import android.widget.Toast;
 import ecv.poker.R;
 import ecv.poker.card.Card;
 import ecv.poker.game.Game;
@@ -27,8 +27,6 @@ public class GameView extends View {
 	// padding between cards and buttons
 	private static final int PADDING = 10;
 	
-	private Context context;
-	private Bitmap cardBack;
 	private MyButton foldButton, checkButton, callButton, betButton, raiseButton;
 	private Slider slider;
 	private Game game;
@@ -40,12 +38,11 @@ public class GameView extends View {
 	private int compCardsX, compCardsY;
 	private int playerCardsX, playerCardsY;
 	private int communityX, communityY;
-	private boolean bitmapsLoaded;
-	private int loadingProgress;
+	private float loadingProgress;
+	private SparseArray<Bitmap> bitmaps;
 	
 	public GameView(Context context) {
 		super(context);
-		this.context = context;
 		greenPaint = new Paint();
 		greenPaint.setColor(0xff006600);
 		greenPaint.setAntiAlias(true);
@@ -55,16 +52,16 @@ public class GameView extends View {
 		whitePaint.setTextSize(32);
 		whitePaint.setTextAlign(Align.CENTER);
 
-		foldButton = new MyButton();
-		checkButton = new MyButton();
-		callButton = new MyButton();
-		betButton = new MyButton();
-		raiseButton = new MyButton();
+		foldButton = new MyButton(R.drawable.fold_button_up, R.drawable.fold_button_down);
+		checkButton = new MyButton(R.drawable.check_button_up, R.drawable.check_button_down);
+		callButton = new MyButton(R.drawable.call_button_up, R.drawable.call_button_down);
+		betButton = new MyButton(R.drawable.bet_button_up, R.drawable.bet_button_down);
+		raiseButton = new MyButton(R.drawable.raise_button_up, R.drawable.raise_button_down);
 		
 		slider = new Slider();
 		slider.setMinVal(0);
 		slider.setMaxVal(100);
-		
+				
 		table = new RectF();
 		game = new Game();
 		game.setupHand();
@@ -99,6 +96,18 @@ public class GameView extends View {
 		buttonW = (screenW - 6 * PADDING) / 4;
 		buttonH = (int) (buttonW / BUTTON_RATIO);
 		
+		betButton.setWidth(buttonW);
+		callButton.setWidth(buttonW);
+		checkButton.setWidth(buttonW);
+		foldButton.setWidth(buttonW);
+		raiseButton.setWidth(buttonW);
+		
+		betButton.setHeight(buttonH);
+		callButton.setHeight(buttonH);
+		checkButton.setHeight(buttonH);
+		foldButton.setHeight(buttonH);
+		raiseButton.setHeight(buttonH);
+		
 		// buttons above slider, aligned horizontally
 		foldButton.setX(PADDING);
 		foldButton.setY(slider.getY() - 2 * buttonH);
@@ -114,35 +123,58 @@ public class GameView extends View {
 		raiseButton.setY(betButton.getY());
 
 		// Load bitmaps asynchronously on a background thread
-		new BitmapLoader().execute();
+		MyBitmap[] bmpsToLoad = new MyBitmap[63];
+		int i = 0;
+		List<Card> cards = new ArrayList<Card>(game.getDeck());
+		cards.addAll(game.getBot().getCards());
+		cards.addAll(game.getUser().getCards());
+		cards.addAll(game.getCommunityCards());
+		for (Card c : cards) {
+			int resId = getResources().getIdentifier("card" + c.getId(),
+					"drawable", "ecv.poker");
+			c.setResId(resId);
+			bmpsToLoad[i++] = new MyBitmap(resId, cardW, cardH);
+		}
+		bmpsToLoad[i++] = new MyBitmap(R.drawable.card_back, cardW, cardH);
+		bmpsToLoad[i++] = new MyBitmap(R.drawable.bet_button_down, buttonW, buttonH);
+		bmpsToLoad[i++] = new MyBitmap(R.drawable.call_button_down, buttonW, buttonH);
+		bmpsToLoad[i++] = new MyBitmap(R.drawable.check_button_down, buttonW, buttonH);
+		bmpsToLoad[i++] = new MyBitmap(R.drawable.fold_button_down, buttonW, buttonH);
+		bmpsToLoad[i++] = new MyBitmap(R.drawable.raise_button_down, buttonW, buttonH);
+		bmpsToLoad[i++] = new MyBitmap(R.drawable.bet_button_up, buttonW, buttonH);
+		bmpsToLoad[i++] = new MyBitmap(R.drawable.call_button_up, buttonW, buttonH);
+		bmpsToLoad[i++] = new MyBitmap(R.drawable.check_button_up, buttonW, buttonH);
+		bmpsToLoad[i++] = new MyBitmap(R.drawable.fold_button_up, buttonW, buttonH);
+		bmpsToLoad[i++] = new MyBitmap(R.drawable.raise_button_up, buttonW, buttonH);
+		new BitmapLoader().execute(bmpsToLoad);
 	}
 
 	@Override
 	protected void onDraw(Canvas canvas) {
 		// Bitmaps are still being loaded. Display the progress
-		if(!bitmapsLoaded){
-			canvas.drawText("LOADING... " + loadingProgress + "%", screenW / 2,
+		if(bitmaps == null){
+			canvas.drawText("LOADING... " + (int) (loadingProgress * 100) + "%", screenW / 2,
 					screenH / 2, whitePaint);
 			int startBar = screenW / 4;
 			int stopBar = 3 * screenW / 4;
 			int barY = (int) (screenH / 2 + whitePaint.getFontSpacing());
-			int curBar = (int) ((stopBar - startBar) * (loadingProgress / 100f) + startBar);
+			int curBar = (int) ((stopBar - startBar) * loadingProgress + startBar);
 			canvas.drawLine(startBar, barY, curBar, barY, whitePaint);
 		}
 		else {
 			canvas.drawOval(table, greenPaint);
 			// draw player, computer, and community cards
 			for (int i = 0; i < game.getBot().getCards().size(); i++) {
-				canvas.drawBitmap(cardBack, compCardsX - i * (cardW + PADDING),
-						compCardsY, null);
+				drawBitmap(canvas, R.drawable.card_back, compCardsX - i * (cardW + PADDING),
+						compCardsY);
 			}
 			for (int i = 0; i < game.getUser().getCards().size(); i++) {
-				canvas.drawBitmap(game.getUser().getCards().get(i).getBitmap(),
-						playerCardsX + i * (cardW + PADDING), playerCardsY, null);
+				drawBitmap(canvas, game.getUser().getCards().get(i).getResId(), 
+						playerCardsX + i * (cardW + PADDING), playerCardsY);
 			}
 			for (int i = 0; i < game.getCommunityCards().size(); i++) {
-				canvas.drawBitmap(game.getCommunityCards().get(i).getBitmap(),
-						communityX + i * (cardW + PADDING), communityY, null);
+				drawBitmap(canvas, game.getCommunityCards().get(i).getResId(), 
+						communityX + i * (cardW + PADDING), communityY);
 			}
 
 			// draw chip counts
@@ -153,33 +185,25 @@ public class GameView extends View {
 			canvas.drawText(game.getPot() + "", (table.left + table.right) / 2,
 					communityY + cardH + whitePaint.getFontSpacing(), whitePaint);
 
-			// disabled buttons aren't drawn and no collisions detected
-			// better place to put these?
-			if(!game.isMyTurn()) {
-				foldButton.disable();
-				checkButton.disable();
-				callButton.disable();
-				betButton.disable();
-				raiseButton.disable();
-			}
-			else if(game.getCurBet() == 0) {
-				foldButton.enable();
-				checkButton.enable();
-				callButton.disable();
-				betButton.enable();
-				raiseButton.disable();
-			} else {
-				foldButton.enable();
-				checkButton.disable();
-				callButton.enable();
-				betButton.disable();
-				raiseButton.enable();
-			}
-			foldButton.draw(canvas);
-			checkButton.draw(canvas);
-			callButton.draw(canvas);
-			betButton.draw(canvas);
-			raiseButton.draw(canvas);
+			// hide buttons when not your turn
+			if(game.isMyTurn()) {				
+				drawBitmap(canvas, foldButton.getStateResId(), foldButton.getX(), foldButton.getY());
+				if(game.getCurBet() == 0) {
+					checkButton.enable();
+					callButton.disable();
+					betButton.enable();
+					raiseButton.disable();
+					drawBitmap(canvas, checkButton.getStateResId(), checkButton.getX(), checkButton.getY());
+					drawBitmap(canvas, betButton.getStateResId(), betButton.getX(), betButton.getY());
+				} else {
+					checkButton.disable();
+					callButton.enable();					
+					betButton.disable();
+					raiseButton.enable();
+					drawBitmap(canvas, callButton.getStateResId(), callButton.getX(), callButton.getY());
+					drawBitmap(canvas, raiseButton.getStateResId(), raiseButton.getX(), raiseButton.getY());
+				}
+			} 
 			
 			// make sure bet values are in correct range - either match current bet or min of big blind
 			if(game.getCurBet() == 0)
@@ -259,6 +283,13 @@ public class GameView extends View {
 
 		return true;
 	}
+	
+	// look up the ID in the sparsearray (hashmap) and draw it if found
+	private void drawBitmap(Canvas canvas, int resId, int x, int y) {
+		Bitmap bmp = bitmaps.get(resId);
+		if(bmp != null) 
+			canvas.drawBitmap(bmp, x, y, null);
+	}
 
 	/**
 	 * Load bitmaps in asynchronously
@@ -266,94 +297,33 @@ public class GameView extends View {
 	 * @author Evan
 	 * 
 	 */
-	private class BitmapLoader extends AsyncTask<Void, Integer, Boolean> {
+	private class BitmapLoader extends AsyncTask<MyBitmap, Float, SparseArray<Bitmap>> {
 
-		// fields used to calculate progress (61 bitmaps being loaded)
-		private static final float PROGRESS_INCREMENT = 1f / 61 * 100;
 		private float CURRENT_PROGRESS = 0;
 
-		// TODO: shouldn't set these off-thread?
-		// TODO: see LruCache for managing bitmaps? cards and objects would only hold ResIds...
 		@Override
-		protected Boolean doInBackground(Void... params) {
-			// get one list of all cards, regardless of where they are in the
-			// game
-			List<Card> cards = new ArrayList<Card>(game.getDeck());
-			cards.addAll(game.getBot().getCards());
-			cards.addAll(game.getUser().getCards());
-			cards.addAll(game.getCommunityCards());
-
-			for (Card c : cards) {
-				int resId = getResources().getIdentifier("card" + c.getId(),
-						"drawable", "ecv.poker");
-				c.setBitmap(getScaledBitmap(c.getBitmap(), resId, cardW, cardH));
+		protected SparseArray<Bitmap> doInBackground(MyBitmap... params) {
+			SparseArray<Bitmap> loaded = new SparseArray<Bitmap>(params.length);
+			for(MyBitmap mb : params) {
+				Bitmap bmp = BitmapFactory.decodeResource(getResources(), mb.getResId());
+				bmp = Bitmap.createScaledBitmap(bmp, mb.getWidth(), mb.getHeight(), false);
+				loaded.put(mb.getResId(), bmp);
+				CURRENT_PROGRESS += 1f / params.length;
+				publishProgress(CURRENT_PROGRESS);
 			}
-			cardBack = getScaledBitmap(cardBack, R.drawable.card_back, cardW,
-					cardH);
-
-			foldButton.setDown(getScaledBitmap(foldButton.getDown(),
-					R.drawable.fold_button_down, buttonW, buttonH));
-			foldButton.setUp(getScaledBitmap(foldButton.getUp(),
-					R.drawable.fold_button_up, buttonW, buttonH));
-			checkButton.setDown(getScaledBitmap(checkButton.getDown(),
-					R.drawable.check_button_down, buttonW, buttonH));
-			checkButton.setUp(getScaledBitmap(checkButton.getUp(),
-					R.drawable.check_button_up, buttonW, buttonH));
-			callButton.setDown(getScaledBitmap(callButton.getDown(),
-					R.drawable.call_button_down, buttonW, buttonH));
-			callButton.setUp(getScaledBitmap(callButton.getUp(),
-					R.drawable.call_button_up, buttonW, buttonH));
-			betButton.setDown(getScaledBitmap(betButton.getDown(),
-					R.drawable.bet_button_down, buttonW, buttonH));
-			betButton.setUp(getScaledBitmap(betButton.getUp(),
-					R.drawable.bet_button_up, buttonW, buttonH));
-			raiseButton.setDown(getScaledBitmap(raiseButton.getDown(),
-					R.drawable.raise_button_down, buttonW, buttonH));
-			raiseButton.setUp(getScaledBitmap(raiseButton.getUp(),
-					R.drawable.raise_button_up, buttonW, buttonH));
-
-			return true;
+			return loaded;
 		}
 
 		@Override
-		protected void onProgressUpdate(Integer... progress) {
+		protected void onProgressUpdate(Float... progress) {
 			loadingProgress = progress[0];
 			invalidate();
 		}
 
 		@Override
-		protected void onPostExecute(Boolean result) {
-			bitmapsLoaded = result;
+		protected void onPostExecute(SparseArray<Bitmap> result) {
+			bitmaps = result;
 			invalidate();
-		}
-
-		/**
-		 * Scale the target bitmap. Only loads the bitmap if target is null, and
-		 * only scales if the target dimensions differ from the scaled
-		 * 
-		 * @param target
-		 * @param resId
-		 * @param scaledW
-		 * @param scaledH
-		 * @return
-		 */
-		private Bitmap getScaledBitmap(Bitmap target, int resId, int scaledW,
-				int scaledH) {
-			
-			publishProgress((int) CURRENT_PROGRESS);
-			CURRENT_PROGRESS += PROGRESS_INCREMENT;
-			
-			if (target == null) {
-				Bitmap bmp = BitmapFactory
-						.decodeResource(getResources(), resId);
-				return Bitmap.createScaledBitmap(bmp, scaledW, scaledH, false);
-			} else if (target.getWidth() != scaledW
-					&& target.getHeight() != scaledH) {
-				return Bitmap.createScaledBitmap(target, scaledW, scaledH,
-						false);
-			} else {
-				return target;
-			}
 		}
 	}
 }

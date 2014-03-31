@@ -1,7 +1,6 @@
 package ecv.poker.view;
 
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
+
 
 /**
  * A button has two states - up and down.
@@ -12,14 +11,17 @@ import android.graphics.Canvas;
  *
  */
 public class MyButton {
-	private Bitmap up, down;
+	private int upId, downId;
 	private int x, y;
+	private int width, height;
 	private boolean isPressed;
 	private boolean isEnabled;
 	
-	public MyButton() {
+	public MyButton(int upId, int downId) {
 		isPressed = false;
 		isEnabled = true;
+		this.upId = upId;
+		this.downId = downId;
 	}
 
 	/**
@@ -29,42 +31,43 @@ public class MyButton {
 	 */
 	public void detectCollision(int evtX, int evtY) {
 		if(isEnabled) {
-			if(up != null) {
-				isPressed = evtX > x && evtX < x + up.getWidth() &&
-						evtY > y && evtY < y + up.getHeight();
-			} else if (down != null) {
-				isPressed = evtX > x && evtX < x + down.getWidth() &&
-						evtY > y && evtY < y + down.getHeight();
-			} else {
-				isPressed = false;
-			} 
+			isPressed = evtX > x && evtX < x + width &&
+						evtY > y && evtY < y + height;
 		} else
 			isPressed = false;
-		
 	}	
 	
 	/**
-	 * Only render if enabled
+	 * For either up or down, if enabled, -1 if not
+	 * @return
 	 */
-	public void draw(Canvas canvas) {
+	public int getStateResId() {
 		if(isEnabled) {
-			if(isPressed)
-				canvas.drawBitmap(down, x, y, null);
-			else
-				canvas.drawBitmap(up, x, y, null);
-		}
-	}	
-	public Bitmap getUp() {
-		return up;
+			if(isPressed) 
+				return downId;
+			else 
+				return upId;
+		} else
+			return -1;
 	}
-	public void setUp(Bitmap up) {
-		this.up = up;
+	
+	public int getUpId() {
+		return upId;
 	}
-	public Bitmap getDown() {
-		return down;
+	public int getDownId() {
+		return downId;
 	}
-	public void setDown(Bitmap down) {
-		this.down = down;
+	public int getWidth() {
+		return width;
+	}
+	public void setWidth(int width) {
+		this.width = width;
+	}
+	public int getHeight() {
+		return height;
+	}
+	public void setHeight(int height) {
+		this.height = height;
 	}
 	public int getX() {
 		return x;
@@ -84,9 +87,15 @@ public class MyButton {
 	public void setPressed(boolean isPressed) {
 		this.isPressed = isPressed;
 	}
+	/**
+	 * Enable drawing and collision detection
+	 */
 	public void enable() {
 		this.isEnabled = true;
 	}
+	/**
+	 * Disable drawing and collision detection
+	 */
 	public void disable() {
 		this.isEnabled = false;
 	}

@@ -1,6 +1,5 @@
 package ecv.poker.card;
 
-import android.graphics.Bitmap;
 
 /**
  * Copied from Crazy Eights With small modifications.
@@ -13,7 +12,7 @@ public class Card implements Comparable<Card> {
 	private int id;
 	private int suit;
 	private int rank;
-	private Bitmap bmp;
+	private int resId;
 
 	public Card(int newId) {
 		id = newId;
@@ -21,16 +20,16 @@ public class Card implements Comparable<Card> {
 		rank = id - suit;
 	}
 
-	public void setBitmap(Bitmap newBitmap) {
-		bmp = newBitmap;
-	}
-
-	public Bitmap getBitmap() {
-		return bmp;
-	}
-
 	public int getId() {
 		return id;
+	}
+
+	public int getResId() {
+		return resId;
+	}
+
+	public void setResId(int resId) {
+		this.resId = resId;
 	}
 
 	public int getSuit() {
