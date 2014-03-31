@@ -57,8 +57,8 @@ public class Player {
 	 * @param bet
 	 */
 	public void call() {
-		game.addToPot(game.getCurBet());
-		chips -= game.getCurBet();	
+		chips -= game.getCurBet();
+		game.addToPot(game.getCurBet());	
 		game.setAction(Game.Action.CALL);
 		game.setCurBet(0);
 	}
@@ -70,7 +70,6 @@ public class Player {
 	public void bet(int bet) {
 		chips -= bet;
 		game.addToPot(bet);
-		game.setCurBet(bet);
 		game.setAction(Game.Action.BET);
 		game.setCurBet(bet);
 	}
@@ -82,8 +81,8 @@ public class Player {
 	public void raise(int raise) {
 		chips -= raise;
 		game.addToPot(raise);
-		game.setCurBet(raise);
 		game.setAction(Game.Action.RAISE);
+		game.setCurBet(raise);
 	}
 
 	/**

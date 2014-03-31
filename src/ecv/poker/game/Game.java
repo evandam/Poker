@@ -46,7 +46,7 @@ public class Game {
 			}
 		}
 		myTurn = random.nextBoolean();
-		ante = 5;	// arbitrary for now...
+		ante = 5;	// arbitrary for now...ante 5, min bet 10
 	}
 
 	/**
@@ -86,13 +86,6 @@ public class Game {
 	 * For now, always check/call when possible.
 	 */
 	public void makeBotPlay() {
-		// delay for testing (terrible idea in UI thread)
-		try {
-			Thread.sleep(1000);
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
 		if(curBet == 0)
 			bot.check();
 		else
