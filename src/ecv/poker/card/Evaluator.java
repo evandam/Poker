@@ -21,8 +21,6 @@ public class Evaluator {
 	/**
 	 * Get an evaluation of the cards that can be compared to others.
 	 * The best combination of cards is found if more than 5 are in the list.
-	 * The list can be less than 5, so this function can be used in the
-	 * middle of a round.
 	 * 
 	 * The returned value is a hexadecimal value with 6 digits. 
 	 * The most significant digit always corresponds to the class constants,
@@ -69,7 +67,7 @@ public class Evaluator {
 	 * The best hand must be found by checking each combination possible.
 	 * 
 	 * @param cards 
-	 * @return List of up to 5 cards with greatest value
+	 * @return List of 5 cards with greatest value
 	 */
 	private static List<Card> getBestCards(List<Card> cards) {
 		int[] bestIndexes = new int[5];
@@ -148,7 +146,11 @@ public class Evaluator {
 			if (cards.get(i - 1).getRank() == curRank) {
 				List<Integer> kickers = new ArrayList<Integer>();
 				for (int j = 1; j < cards.size() - 1; j++) {
-					kickers.add(cards.get((i + j) % cards.size()).getRank());
+					int kickerIndex = i + j;
+					// wrap-around
+					if(kickerIndex >= cards.size())
+						kickerIndex %= cards.size();	
+					kickers.add(cards.get(kickerIndex).getRank());
 				}
 				int val = ONE_PAIR << 20;	// put in highest digit
 				val += curRank << 12;	
@@ -160,7 +162,6 @@ public class Evaluator {
 				return val;
 			}
 		}
-		
 		return 0;
 	}
 
@@ -197,7 +198,7 @@ public class Evaluator {
 					}
 				}
 			}
-		}
+		} 
 		return 0;
 	}
 
@@ -217,7 +218,10 @@ public class Evaluator {
 				// find the kickers
 				List<Integer> kickers = new ArrayList<Integer>();
 				for(int j = 1; j < cards.size() - 2; j++) {
-					kickers.add(cards.get((i + j) % cards.size()).getRank());
+					int kickerIndex = i + j;
+					if(kickerIndex >= cards.size())
+						kickerIndex %= cards.size();
+					kickers.add(cards.get(kickerIndex).getRank());
 				}
 				int val = TRIPS << 20; 
 				val += curRank << 8;
@@ -238,25 +242,23 @@ public class Evaluator {
 	 * Where the last digit is the rank of the highest card in the hand
 	 */
 	private static int getStraight(List<Card> cards) {
-		if(cards.size() == 5) {
-			boolean isStraight = true;
-			for(int i = 1; i < 5 && isStraight; i++) {
-				int curRank = cards.get(i).getRank();
-				if(cards.get(i - 1).getRank() != curRank + 1) {
-					// allow ace to "wrap around" so A5432 is a straight
-					if(!(i == 1 && curRank == 5 && cards.get(0).getRank() == 14))
-						isStraight = false;
-				}
+		boolean isStraight = true;
+		for(int i = 1; i < 5 && isStraight; i++) {
+			int curRank = cards.get(i).getRank();
+			if(cards.get(i - 1).getRank() != curRank + 1) {
+				// allow ace to "wrap around" so A5432 is a straight
+				if(!(i == 1 && curRank == 5 && cards.get(0).getRank() == 14))
+					isStraight = false;
 			}
-			if(isStraight) {
-				int highCard = cards.get(0).getRank();
-				// 5-high straight for A-5, not ace...
-				if(cards.get(0).getRank() == 14 && cards.get(1).getRank() == 5)
-					highCard = 5;
-				int val = STRAIGHT << 20;
-				val += highCard;
-				return val;
-			}
+		}
+		if(isStraight) {
+			int highCard = cards.get(0).getRank();
+			// 5-high straight for A-5, not ace...
+			if(cards.get(0).getRank() == 14 && cards.get(1).getRank() == 5)
+				highCard = 5;
+			int val = STRAIGHT << 20;
+			val += highCard;
+			return val;
 		} 
 		return 0;
 	}
@@ -265,23 +267,21 @@ public class Evaluator {
 	 * 
 	 * @param cards
 	 * @return 0x5-----
-	 * All card ranks in descending order
+	 * All cards same suit
+	 * Last 5 digits are all cards in hand (like getHighCard)
 	 */
 	private static int getFlush(List<Card> cards) {
-		if(cards.size() == 5) {
-			int val = 0;
-			for(int i = 0; i < 5; i++) {
-				if(cards.get(i).getSuit() != cards.get(0).getSuit())
-					return 0;
-				else {
-					// add value as kicker. remember this is descending order
-					val += cards.get(i).getRank() << 4 * (cards.size() - 1 - i);
-				}
+		int val = 0;
+		for(int i = 0; i < 5; i++) {
+			if(cards.get(i).getSuit() != cards.get(0).getSuit())
+				return 0;
+			else {
+				// add value as kicker. remember this is descending order
+				val += cards.get(i).getRank() << 4 * (cards.size() - 1 - i);
 			}
-			val += FLUSH << 20;
-			return val;
 		}
-		return 0;
+		val += FLUSH << 20;
+		return val;
 	}
 	
 	/**
@@ -328,9 +328,10 @@ public class Evaluator {
 				int val = QUADS << 20;
 				val += curRank << 4;
 				// kicker is the next card in the list
-				int kicker = cards.get((i + 1) % cards.size()).getRank();
-				if(kicker != val)
-					val += kicker;
+				int kickerIndex = i + 1;
+				if(kickerIndex >= cards.size())
+					kickerIndex %= cards.size();
+				val += cards.get(kickerIndex).getRank();
 				return val;
 			}
 		}
