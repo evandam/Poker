@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
+import android.util.Log;
 import ecv.poker.card.Card;
 import ecv.poker.card.Evaluator;
 import ecv.poker.player.Player;
@@ -17,6 +18,8 @@ import ecv.poker.player.Player;
  * @author Evan
  */
 public class Game {
+	
+	private static final String TAG = "poker.game";
 
 	/**
 	 * An action a player can perform
@@ -33,7 +36,8 @@ public class Game {
 	private boolean myTurn;
 	private Action prevAction, curAction;
 	private int ante;	// TODO: implement blinds?
-
+	private AIThread aiThread;
+	
 	public Game() {
 		random = new Random();
 		user = new Player(this);
@@ -45,8 +49,9 @@ public class Game {
 				deck.add(new Card(i + j));
 			}
 		}
-		myTurn = random.nextBoolean();
+		myTurn = true;
 		ante = 5;	// arbitrary for now...ante 5, min bet 10
+		aiThread = new AIThread();
 	}
 
 	/**
@@ -86,13 +91,13 @@ public class Game {
 	 * For now, always check/call when possible.
 	 */
 	public void makeBotPlay() {
-		if(curBet == 0)
-			bot.check();
-		else
-			bot.call();
-		
-		myTurn = true;
-		makeNextMove();
+		if(aiThread.getState() == Thread.State.NEW)
+			aiThread.start();
+		else if(aiThread.getState() == Thread.State.TERMINATED) {
+			aiThread = new AIThread();
+			aiThread.start();
+		}
+		// else don't start a new thread...one is already running
 	}
 
 	/**
@@ -159,10 +164,14 @@ public class Game {
 		int userRank = Evaluator.evaluate(userCards);
 		int botRank = Evaluator.evaluate(botCards);
 	
-		if (userRank >= botRank)
+		if (userRank >= botRank) {
 			winners.add(user);
-		if (userRank <= botRank)
+			Log.d(TAG, "User won!");
+		}
+		if (userRank <= botRank) {
 			winners.add(bot);
+			Log.d(TAG, "Bot won!");
+		}
 		return winners;
 	}
 
@@ -172,6 +181,19 @@ public class Game {
 	 * @return message to alert user of outcome
 	 */
 	public void endHand() {
+		String botCards = "";
+		for(Card c : bot.getCards())
+			botCards += c.getId() + " ";
+		String playerCards = "";
+		for(Card c : user.getCards())
+			playerCards += c.getId() + " ";
+		String communityCardsStr = "";
+		for(Card c : communityCards)
+			communityCardsStr += c.getId() + " ";
+		Log.d(TAG, "Community: " + communityCardsStr);
+		Log.d(TAG, "Player: " + playerCards);
+		Log.d(TAG, "Bot: " + botCards);
+		
 		List<Player> winners = getWinners();
 		// split pot evenly amongst winners
 		for (Player player : winners) {
@@ -251,5 +273,104 @@ public class Game {
 	public void setAction(Action action) {
 		prevAction = curAction;
 		curAction = action;
+	}
+	
+	/**
+	 * Run simulations of current hand in background until a "smart" move can be found
+	 */
+	private class AIThread extends Thread {
+		
+		private static final int NUM_SIMULATIONS = 1000;
+		private int wins;
+		private List<Card> communityCopy, deckCopy, playerSimHand, botSimHand;
+		
+		@Override 
+		public void run() {
+			// setup current scenario
+			wins = 0;
+			deckCopy = new ArrayList<Card>(deck);
+			playerSimHand = new ArrayList<Card>();
+			botSimHand = new ArrayList<Card>();
+			communityCopy = new ArrayList<Card>(communityCards);
+			deckCopy.addAll(user.getCards());
+			
+			// run the simulations!
+			for(int i = 0; i < NUM_SIMULATIONS; i++) {
+				// give player 2 random cards
+				for(int j = 0; j < 2; j++)
+					playerSimHand.add(deckCopy.remove(deckCopy.size()-1));
+				
+				// deal out rest of community cards if necessary
+				while(communityCopy.size() < 5)
+					communityCopy.add(deckCopy.remove(deckCopy.size()-1));
+				
+				// evaluate each hand with simulated community cards dealt
+				playerSimHand.addAll(communityCopy);
+				botSimHand.addAll(communityCopy);
+				if(Evaluator.evaluate(botSimHand) >= Evaluator.evaluate(playerSimHand))
+					wins++;
+				
+				// reset scenario for next loop
+				deckCopy.addAll(playerSimHand);
+				deckCopy.addAll(botSimHand);
+				deckCopy.addAll(communityCopy);
+				
+				botSimHand.removeAll(communityCopy);
+				playerSimHand.clear();
+				communityCopy.retainAll(communityCards);
+			}
+			
+			// determine what to do...
+			if(pot > 0) {
+				// pot odds defined by current bet / total pot
+				float potOdds = (float) curBet / pot;
+				float simulatedOdds = (float) wins / NUM_SIMULATIONS;
+				// TODO: synchronized blocks?
+				if(simulatedOdds < potOdds) {
+					// chances of winning less than value of pot...check, fold, or bluff (randomly)
+					if(random.nextFloat() < 0.25) {
+						if(curBet == 0) {
+							bot.bet(curBet);
+							Log.d(TAG, "ai bet " + curBet + " bluff");
+						} else {
+							bot.raise(2 * curBet);
+							Log.d(TAG, "ai raised " + 2 * curBet + " bluff");
+						}
+					}
+					else if(curBet > 0) {
+						bot.fold();
+						Log.d(TAG, "ai folded");
+					}
+					else {
+						bot.check();
+						Log.d(TAG, "ai checked w/ negative odds");
+					}
+				}
+				// expected to win hand. should call or raise (split 50/50)
+				else {
+					if(random.nextBoolean()) {
+						if(curBet > 0) {
+							bot.call();
+							Log.d(TAG, "ai called w/ positive odds");
+						}
+						else {
+							bot.check();					
+							Log.d(TAG, "ai checked w/ positive odds");
+						}
+					} else {
+						if(curBet > 0) {
+							bot.raise(2 * curBet);
+							Log.d(TAG, "ai raised with positive odds");
+						}
+						else {
+							bot.bet(pot / 2);
+							Log.d(TAG, "ai bet with positive odds");
+						}
+					}
+				}
+			}
+			myTurn = true;
+			makeNextMove();
+		}
 	}
 }
