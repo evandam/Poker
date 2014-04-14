@@ -2,13 +2,14 @@ package ecv.poker.view;
 
 /**
  * Wrapper for a resource ID and dimensions of a bitmap
+ * 
  * @author evan
- *
+ * 
  */
 public class MyBitmap {
 	private int resId;
 	private int width, height;
-	
+
 	public MyBitmap(int resId, int width, int height) {
 		this.setResId(resId);
 		this.setWidth(width);

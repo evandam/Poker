@@ -2,8 +2,8 @@ package ecv.poker.card;
 
 
 /**
- * Copied from Crazy Eights With small modifications.
- * Implements comparable so hands can easily be sorted
+ * Copied from Crazy Eights With small modifications. Implements comparable so
+ * hands can easily be sorted
  * 
  * @author Evan
  */

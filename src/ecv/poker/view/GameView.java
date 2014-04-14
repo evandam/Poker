@@ -22,15 +22,16 @@ import ecv.poker.card.Card;
 import ecv.poker.game.Game;
 
 public class GameView extends View {
-	
+
 	// width:height ratios of bitmaps
 	private static final float BUTTON_RATIO = 412f / 162;
 	private static final float CARD_RATIO = 222f / 284;
 	// padding between cards and buttons
 	private static final int PADDING = 10;
-	
+
 	private Context context;
-	private MyButton foldButton, checkButton, callButton, betButton, raiseButton;
+	private MyButton foldButton, checkButton, callButton, betButton,
+			raiseButton;
 	private Slider slider;
 	private Game game;
 	private RectF table;
@@ -43,7 +44,7 @@ public class GameView extends View {
 	private int communityX, communityY;
 	private float loadingProgress;
 	private SparseArray<Bitmap> bitmaps;
-	
+
 	public GameView(Context context) {
 		super(context);
 		this.context = context;
@@ -56,16 +57,21 @@ public class GameView extends View {
 		whitePaint.setTextSize(32);
 		whitePaint.setTextAlign(Align.CENTER);
 
-		foldButton = new MyButton(R.drawable.fold_button_up, R.drawable.fold_button_down);
-		checkButton = new MyButton(R.drawable.check_button_up, R.drawable.check_button_down);
-		callButton = new MyButton(R.drawable.call_button_up, R.drawable.call_button_down);
-		betButton = new MyButton(R.drawable.bet_button_up, R.drawable.bet_button_down);
-		raiseButton = new MyButton(R.drawable.raise_button_up, R.drawable.raise_button_down);
-		
+		foldButton = new MyButton(R.drawable.fold_button_up,
+				R.drawable.fold_button_down);
+		checkButton = new MyButton(R.drawable.check_button_up,
+				R.drawable.check_button_down);
+		callButton = new MyButton(R.drawable.call_button_up,
+				R.drawable.call_button_down);
+		betButton = new MyButton(R.drawable.bet_button_up,
+				R.drawable.bet_button_down);
+		raiseButton = new MyButton(R.drawable.raise_button_up,
+				R.drawable.raise_button_down);
+
 		slider = new Slider();
 		slider.setMinVal(0);
 		slider.setMaxVal(100);
-				
+
 		table = new RectF();
 		game = new Game();
 		game.setupHand();
@@ -95,32 +101,32 @@ public class GameView extends View {
 		slider.setStartX(screenW / 10);
 		slider.setStopX(9 * slider.getStartX());
 		slider.setCurX(slider.getStartX());
-		
+
 		// fit 4 buttons across screen
 		buttonW = (screenW - 6 * PADDING) / 4;
 		buttonH = (int) (buttonW / BUTTON_RATIO);
-		
+
 		betButton.setWidth(buttonW);
 		callButton.setWidth(buttonW);
 		checkButton.setWidth(buttonW);
 		foldButton.setWidth(buttonW);
 		raiseButton.setWidth(buttonW);
-		
+
 		betButton.setHeight(buttonH);
 		callButton.setHeight(buttonH);
 		checkButton.setHeight(buttonH);
 		foldButton.setHeight(buttonH);
 		raiseButton.setHeight(buttonH);
-		
+
 		// buttons above slider, aligned horizontally
 		foldButton.setX(PADDING);
 		foldButton.setY(slider.getY() - 2 * buttonH);
-		
+
 		checkButton.setX(foldButton.getX() + buttonW + PADDING);
 		checkButton.setY(foldButton.getY());
 		callButton.setX(checkButton.getX());
 		callButton.setY(checkButton.getY());
-		
+
 		betButton.setX(callButton.getX() + buttonW + PADDING);
 		betButton.setY(callButton.getY());
 		raiseButton.setX(betButton.getX());
@@ -140,93 +146,115 @@ public class GameView extends View {
 			bmpsToLoad[i++] = new MyBitmap(resId, cardW, cardH);
 		}
 		bmpsToLoad[i++] = new MyBitmap(R.drawable.card_back, cardW, cardH);
-		bmpsToLoad[i++] = new MyBitmap(R.drawable.bet_button_down, buttonW, buttonH);
-		bmpsToLoad[i++] = new MyBitmap(R.drawable.call_button_down, buttonW, buttonH);
-		bmpsToLoad[i++] = new MyBitmap(R.drawable.check_button_down, buttonW, buttonH);
-		bmpsToLoad[i++] = new MyBitmap(R.drawable.fold_button_down, buttonW, buttonH);
-		bmpsToLoad[i++] = new MyBitmap(R.drawable.raise_button_down, buttonW, buttonH);
-		bmpsToLoad[i++] = new MyBitmap(R.drawable.bet_button_up, buttonW, buttonH);
-		bmpsToLoad[i++] = new MyBitmap(R.drawable.call_button_up, buttonW, buttonH);
-		bmpsToLoad[i++] = new MyBitmap(R.drawable.check_button_up, buttonW, buttonH);
-		bmpsToLoad[i++] = new MyBitmap(R.drawable.fold_button_up, buttonW, buttonH);
-		bmpsToLoad[i++] = new MyBitmap(R.drawable.raise_button_up, buttonW, buttonH);
+		bmpsToLoad[i++] = new MyBitmap(R.drawable.bet_button_down, buttonW,
+				buttonH);
+		bmpsToLoad[i++] = new MyBitmap(R.drawable.call_button_down, buttonW,
+				buttonH);
+		bmpsToLoad[i++] = new MyBitmap(R.drawable.check_button_down, buttonW,
+				buttonH);
+		bmpsToLoad[i++] = new MyBitmap(R.drawable.fold_button_down, buttonW,
+				buttonH);
+		bmpsToLoad[i++] = new MyBitmap(R.drawable.raise_button_down, buttonW,
+				buttonH);
+		bmpsToLoad[i++] = new MyBitmap(R.drawable.bet_button_up, buttonW,
+				buttonH);
+		bmpsToLoad[i++] = new MyBitmap(R.drawable.call_button_up, buttonW,
+				buttonH);
+		bmpsToLoad[i++] = new MyBitmap(R.drawable.check_button_up, buttonW,
+				buttonH);
+		bmpsToLoad[i++] = new MyBitmap(R.drawable.fold_button_up, buttonW,
+				buttonH);
+		bmpsToLoad[i++] = new MyBitmap(R.drawable.raise_button_up, buttonW,
+				buttonH);
 		new BitmapLoader().execute(bmpsToLoad);
 	}
 
 	@Override
 	protected void onDraw(Canvas canvas) {
 		// Bitmaps are still being loaded. Display the progress
-		if(bitmaps == null){
-			canvas.drawText("LOADING... " + (int) (loadingProgress * 100) + "%", screenW / 2,
-					screenH / 2, whitePaint);
+		if (bitmaps == null) {
+			canvas.drawText(
+					"LOADING... " + (int) (loadingProgress * 100) + "%",
+					screenW / 2, screenH / 2, whitePaint);
 			int startBar = screenW / 4;
 			int stopBar = 3 * screenW / 4;
 			int barY = (int) (screenH / 2 + whitePaint.getFontSpacing());
 			int curBar = (int) ((stopBar - startBar) * loadingProgress + startBar);
 			canvas.drawLine(startBar, barY, curBar, barY, whitePaint);
-		}
-		else {
+		} else {
 			canvas.drawOval(table, greenPaint);
 			// draw player, computer, and community cards
 			for (int i = 0; i < game.getBot().getCards().size(); i++) {
 				int cardResId = R.drawable.card_back;
 				// show the user the bot's cards at the end of the hand.
-				if(game.isHandOver())
+				if (game.isHandOver())
 					cardResId = game.getBot().getCards().get(i).getResId();
-				drawBitmap(canvas, cardResId, compCardsX - i * (cardW + PADDING),
-						compCardsY);
+				drawBitmap(canvas, cardResId, compCardsX - i
+						* (cardW + PADDING), compCardsY);
 			}
 			for (int i = 0; i < game.getUser().getCards().size(); i++) {
-				drawBitmap(canvas, game.getUser().getCards().get(i).getResId(), 
+				drawBitmap(canvas, game.getUser().getCards().get(i).getResId(),
 						playerCardsX + i * (cardW + PADDING), playerCardsY);
 			}
 			for (int i = 0; i < game.getCommunityCards().size(); i++) {
-				drawBitmap(canvas, game.getCommunityCards().get(i).getResId(), 
+				drawBitmap(canvas, game.getCommunityCards().get(i).getResId(),
 						communityX + i * (cardW + PADDING), communityY);
 			}
 
 			// draw chip counts
 			canvas.drawText(game.getUser().getChips() + "", playerCardsX
-					+ cardW + PADDING / 2, playerCardsY + cardH + whitePaint.getFontSpacing(), whitePaint);
-			canvas.drawText(game.getBot().getChips() + "", compCardsX - PADDING / 2,
-					compCardsY + cardH + whitePaint.getFontSpacing(), whitePaint);
+					+ cardW + PADDING / 2,
+					playerCardsY + cardH + whitePaint.getFontSpacing(),
+					whitePaint);
+			canvas.drawText(game.getBot().getChips() + "", compCardsX - PADDING
+					/ 2, compCardsY + cardH + whitePaint.getFontSpacing(),
+					whitePaint);
 			canvas.drawText(game.getPot() + "", (table.left + table.right) / 2,
-					communityY + cardH + whitePaint.getFontSpacing(), whitePaint);
+					communityY + cardH + whitePaint.getFontSpacing(),
+					whitePaint);
 
 			// hide buttons when not your turn
-			if(game.isMyTurn() && !game.isHandOver()) {				
-				drawBitmap(canvas, foldButton.getStateResId(), foldButton.getX(), foldButton.getY());
-				if(game.getCurBet() == 0) {
+			if (game.isMyTurn() && !game.isHandOver()) {
+				drawBitmap(canvas, foldButton.getStateResId(),
+						foldButton.getX(), foldButton.getY());
+				if (game.getCurBet() == 0) {
 					checkButton.enable();
 					callButton.disable();
 					betButton.enable();
 					raiseButton.disable();
-					drawBitmap(canvas, checkButton.getStateResId(), checkButton.getX(), checkButton.getY());
-					drawBitmap(canvas, betButton.getStateResId(), betButton.getX(), betButton.getY());
+					drawBitmap(canvas, checkButton.getStateResId(),
+							checkButton.getX(), checkButton.getY());
+					drawBitmap(canvas, betButton.getStateResId(),
+							betButton.getX(), betButton.getY());
 				} else {
 					checkButton.disable();
-					callButton.enable();					
+					callButton.enable();
 					betButton.disable();
 					raiseButton.enable();
-					drawBitmap(canvas, callButton.getStateResId(), callButton.getX(), callButton.getY());
-					drawBitmap(canvas, raiseButton.getStateResId(), raiseButton.getX(), raiseButton.getY());
+					drawBitmap(canvas, callButton.getStateResId(),
+							callButton.getX(), callButton.getY());
+					drawBitmap(canvas, raiseButton.getStateResId(),
+							raiseButton.getX(), raiseButton.getY());
 				}
-				// make sure bet values are in correct range - either match current bet or min of big blind
-			if(game.getCurBet() == 0)
-				slider.setMinVal(game.getAnte() * 2);
-			else
-				slider.setMinVal(game.getCurBet());
-			if(game.getBot().getChips() > game.getUser().getChips())
-				slider.setMaxVal(game.getUser().getChips());
-			else
-				slider.setMaxVal(game.getBot().getChips());
-			slider.draw(canvas, whitePaint);
-			
-			// draw value of the bet
-			int betValX = betButton.getX() + (int) (buttonW * 1.5);
-			int betValY = betButton.getY() + (int) whitePaint.getFontSpacing();
-			canvas.drawText(slider.getVal() + "", betValX, betValY, whitePaint);
-			} 
+				// make sure bet values are in correct range - either match
+				// current bet or min of big blind
+				if (game.getCurBet() == 0)
+					slider.setMinVal(game.getAnte() * 2);
+				else
+					slider.setMinVal(game.getCurBet());
+				if (game.getBot().getChips() > game.getUser().getChips())
+					slider.setMaxVal(game.getUser().getChips());
+				else
+					slider.setMaxVal(game.getBot().getChips());
+				slider.draw(canvas, whitePaint);
+
+				// draw value of the bet
+				int betValX = betButton.getX() + (int) (buttonW * 1.5);
+				int betValY = betButton.getY()
+						+ (int) whitePaint.getFontSpacing();
+				canvas.drawText(slider.getVal() + "", betValX, betValY,
+						whitePaint);
+			}
 		}
 	}
 
@@ -243,7 +271,7 @@ public class GameView extends View {
 			betButton.detectCollision(x, y);
 			raiseButton.detectCollision(x, y);
 			slider.detectCollision(x, y);
-			if(slider.isPressed())
+			if (slider.isPressed())
 				slider.setCurX(x);
 			break;
 		case MotionEvent.ACTION_MOVE:
@@ -252,27 +280,25 @@ public class GameView extends View {
 			break;
 		case MotionEvent.ACTION_UP:
 			// press anywhere after a hand to start a new one
-			if(game.isHandOver())
+			if (game.isHandOver())
 				game.setupHand();
 			else if (foldButton.isPressed()) {
 				game.getUser().fold();
-				nextMove();				
+				nextMove();
 			} else if (checkButton.isPressed()) {
 				game.getUser().check();
-				nextMove();						
+				nextMove();
 			} else if (callButton.isPressed()) {
 				game.getUser().call();
-				nextMove();			
+				nextMove();
 			} else if (betButton.isPressed()) {
 				game.getUser().bet(slider.getVal());
-				nextMove();						
+				nextMove();
 			} else if (raiseButton.isPressed()) {
 				game.getUser().raise(slider.getVal());
-				nextMove();					
+				nextMove();
 			}
-			
-			
-			
+
 			foldButton.setPressed(false);
 			checkButton.setPressed(false);
 			callButton.setPressed(false);
@@ -285,20 +311,20 @@ public class GameView extends View {
 
 		return true;
 	}
-	
+
 	private void nextMove() {
 		game.setMyTurn(false);
-		Toast toast = Toast.makeText(context,game.makeNextMove(), Toast.LENGTH_SHORT);
+		Toast toast = Toast.makeText(context, game.makeNextMove(),
+				Toast.LENGTH_SHORT);
 		toast.setGravity(Gravity.CENTER, 0, 0);
 		toast.show();
 		slider.setCurX(slider.getStartX());
 	}
 
-	
 	// look up the ID in the sparsearray (hashmap) and draw it if found
 	private void drawBitmap(Canvas canvas, int resId, int x, int y) {
 		Bitmap bmp = bitmaps.get(resId);
-		if(bmp != null) 
+		if (bmp != null)
 			canvas.drawBitmap(bmp, x, y, null);
 	}
 
@@ -308,16 +334,19 @@ public class GameView extends View {
 	 * @author Evan
 	 * 
 	 */
-	private class BitmapLoader extends AsyncTask<MyBitmap, Float, SparseArray<Bitmap>> {
+	private class BitmapLoader extends
+			AsyncTask<MyBitmap, Float, SparseArray<Bitmap>> {
 
 		private float CURRENT_PROGRESS = 0;
 
 		@Override
 		protected SparseArray<Bitmap> doInBackground(MyBitmap... params) {
 			SparseArray<Bitmap> loaded = new SparseArray<Bitmap>(params.length);
-			for(MyBitmap mb : params) {
-				Bitmap bmp = BitmapFactory.decodeResource(getResources(), mb.getResId());
-				bmp = Bitmap.createScaledBitmap(bmp, mb.getWidth(), mb.getHeight(), false);
+			for (MyBitmap mb : params) {
+				Bitmap bmp = BitmapFactory.decodeResource(getResources(),
+						mb.getResId());
+				bmp = Bitmap.createScaledBitmap(bmp, mb.getWidth(),
+						mb.getHeight(), false);
 				loaded.put(mb.getResId(), bmp);
 				CURRENT_PROGRESS += 1f / params.length;
 				publishProgress(CURRENT_PROGRESS);

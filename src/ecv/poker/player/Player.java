@@ -34,7 +34,7 @@ public class Player {
 	public void addChips(int i) {
 		chips += i;
 	}
-	
+
 	/**
 	 * Throw away player's cards.
 	 */
@@ -51,20 +51,22 @@ public class Player {
 		game.setAction(Game.Action.CHECK);
 		game.setCurBet(0);
 	}
-	
+
 	/**
 	 * Call the current bet and deduct from chip stack
+	 * 
 	 * @param bet
 	 */
 	public void call() {
 		chips -= game.getCurBet();
-		game.addToPot(game.getCurBet());	
+		game.addToPot(game.getCurBet());
 		game.setAction(Game.Action.CALL);
 		game.setCurBet(0);
 	}
 
 	/**
 	 * Set the current bet, add to pot and deduct from chip stack
+	 * 
 	 * @param bet
 	 */
 	public void bet(int bet) {
@@ -73,9 +75,10 @@ public class Player {
 		game.setAction(Game.Action.BET);
 		game.setCurBet(bet);
 	}
-	
+
 	/**
 	 * Call the current bet and raise additional
+	 * 
 	 * @param raise
 	 */
 	public void raise(int raise) {

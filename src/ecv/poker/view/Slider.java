@@ -4,11 +4,10 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 
 /**
- * A bar with a sliding component
- * to select from a range of values.
+ * A bar with a sliding component to select from a range of values.
  * 
  * @author Evan
- *
+ * 
  */
 public class Slider {
 	private int startX, stopX;
@@ -20,20 +19,23 @@ public class Slider {
 
 	/**
 	 * Collision anywhere along slider, not just the circle
+	 * 
 	 * @param evtX
 	 * @param evtY
 	 * @return
 	 */
 	public void detectCollision(int evtX, int evtY) {
-		setPressed(evtX > startX && evtX < stopX &&
-				evtY > y - radius && evtY < y + radius);
+		setPressed(evtX > startX && evtX < stopX && evtY > y - radius
+				&& evtY < y + radius);
 	}
-	
+
 	public void draw(Canvas canvas, Paint paint) {
-		canvas.drawText(minVal + "", startX, y + radius + paint.getFontSpacing(), paint);
-		canvas.drawText(maxVal + "", stopX, y + radius + paint.getFontSpacing(), paint);
+		canvas.drawText(minVal + "", startX,
+				y + radius + paint.getFontSpacing(), paint);
+		canvas.drawText(maxVal + "", stopX,
+				y + radius + paint.getFontSpacing(), paint);
 		canvas.drawLine(startX, y, stopX, y, paint);
-		if(isPressed)
+		if (isPressed)
 			canvas.drawCircle(curX, y, 1.5f * radius, paint);
 		else
 			canvas.drawCircle(curX, y, radius, paint);
@@ -74,9 +76,9 @@ public class Slider {
 	}
 
 	public void setCurX(int curX) {
-		if(curX < startX)
+		if (curX < startX)
 			this.curX = startX;
-		else if(curX > stopX)
+		else if (curX > stopX)
 			this.curX = stopX;
 		else
 			this.curX = curX;
