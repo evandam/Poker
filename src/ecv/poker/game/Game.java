@@ -116,22 +116,27 @@ public class Game {
 		// }
 
 		bot.makeMove();
-		return "";
+		try {
+			bot.getThread().join();
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		// no AI..bot doesn't bet/bluff/fold for now...
-//		String msg;
-//		if (curBet > 0) {
-//			msg = "Computer called " + curBet;
-//			bot.call();
-//		} else {
-//			msg = "Computer checked";
-//			bot.check();
-//		}
-//		myTurn = true;
-//		String nextMoveStr = makeNextMove();
-//		if (nextMoveStr != null)
-//			return nextMoveStr;
-//		else
-//			return msg;
+		String msg;
+		if (curBet > 0) {
+			msg = "Computer called " + curBet;
+			bot.call();
+		} else {
+			msg = "Computer checked";
+			bot.check();
+		}
+		myTurn = true;
+		String nextMoveStr = makeNextMove();
+		if (nextMoveStr != null)
+			return nextMoveStr;
+		else
+			return msg;
 	}
 
 	/**

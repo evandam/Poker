@@ -25,15 +25,19 @@ public class AIPlayer extends Player {
 		aiThread = new AIThread();
 	}
 	
+	public Thread getThread() {
+		return aiThread;
+	}
+	
 	/**
 	 * Run simulations in new thread to determine
 	 * Probability of winning the hand, and act on that information.
 	 */
 	public void makeMove() {
 		// check the state of the thread first to ensure only 1 is running at a time
-		if(aiThread.getState() == Thread.State.NEW)
+		if(aiThread.getState() == Thread.State.NEW) {
 			aiThread.start();
-		else if(aiThread.getState() == Thread.State.TERMINATED) {
+		} else if(aiThread.getState() == Thread.State.TERMINATED) {
 			aiThread = new AIThread();
 			aiThread.start();
 		}
