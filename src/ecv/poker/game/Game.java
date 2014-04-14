@@ -108,13 +108,6 @@ public class Game {
 	 * @return string describing bot's move
 	 */
 	public String makeBotPlay() {
-		// if(aiThread.getState() == Thread.State.NEW)
-		// aiThread.start();
-		// else if(aiThread.getState() == Thread.State.TERMINATED) {
-		// aiThread = new AIThread();
-		// aiThread.start();
-		// }
-
 		bot.makeMove();
 		try {
 			bot.getThread().join();
@@ -181,58 +174,28 @@ public class Game {
 	}
 
 	/**
-	 * List because there is a chance that it is a split pot.
-	 * 
-	 * @return list of players who won the pot.
-	 */
-	public List<Player> getWinners() {
-		List<Player> winners = new ArrayList<Player>();
-		List<Card> userCards, botCards;
-		// check if player folded
-		if (user.getCards().size() > 0) {
-			userCards = new ArrayList<Card>(user.getCards());
-			userCards.addAll(communityCards);
-		} else {
-			winners.add(bot);
-			return winners;
-		}
-		// check if computer folded
-		if (bot.getCards().size() > 0) {
-			botCards = new ArrayList<Card>(bot.getCards());
-			botCards.addAll(communityCards);
-		} else {
-			winners.add(user);
-			return winners;
-		}
-
-		// players' hands need to be compared
-		int userRank = Evaluator.evaluate(userCards);
-		int botRank = Evaluator.evaluate(botCards);
-
-		if (userRank >= botRank)
-			winners.add(user);
-		if (userRank <= botRank)
-			winners.add(bot);
-
-		return winners;
-	}
-
-	/**
 	 * Reset the deck, clear players' hands, award chips to the winner(s)
 	 * 
 	 * @return message to alert user of outcome
 	 */
 	public String endHand() {
-		List<Player> winners = getWinners();
-		String msg = "";
-		// split pot evenly amongst winners
-		for (Player player : winners) {
-			player.addChips(pot / winners.size());
-			if (player == user)
-				msg += "You won " + pot / winners.size() + " chips! ";
-			else
-				msg += "Computer won " + pot / winners.size() + " chips!";
+		// determine who won
+		int userRank = Evaluator.evaluate(user.getCards(), communityCards);
+		int botRank = Evaluator.evaluate(bot.getCards(), communityCards);
+		
+		String msg;
+		if (userRank > botRank) {
+			user.addChips(pot);
+			msg = "You won " + pot + " chips!";
+		} else if (userRank < botRank) {
+			bot.addChips(pot);
+			msg = "Computer won " + pot + " chips!";
+		} else {
+			user.addChips(pot / 2);
+			bot.addChips(pot / 2);
+			msg = "Split pot!";
 		}
+		
 		handOver = true;
 		return msg;
 	}

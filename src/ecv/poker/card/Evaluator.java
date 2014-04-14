@@ -61,6 +61,17 @@ public class Evaluator {
 		else
 			return getHighCard(cards);
 	}
+	
+	public static int evaluate(List<Card> holeCards, List<Card> community) {
+		// folding returns -1 (player loses)
+		if(holeCards.size() == 0)
+			return -1;
+		else {
+			List<Card> allCards = new ArrayList<Card>(community);
+			allCards.addAll(holeCards);
+			return evaluate(allCards);
+		}
+	}
 
 	/**
 	 * If the hand being evaluated is made of more than 5 cards, The best hand

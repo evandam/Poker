@@ -17,7 +17,7 @@ import ecv.poker.game.Game;
  */
 public class AIPlayer extends Player {
 	private Game game;
-	private AIThread aiThread;
+	private Thread aiThread;
 	
 	public AIPlayer(Game game) {
 		super(game);
@@ -44,52 +44,32 @@ public class AIPlayer extends Player {
 	}
 	
 	private class AIThread extends Thread {
-		private List<Card> deck, community, opponentCards;
-		private List<Card> myEval, opponentEval;
-		int communityCardsDealt;
+
 		@Override
 		public void run() {
 			// make copies of all cards in play
-			deck = new ArrayList<Card>(game.getDeck());
-			community = new ArrayList<Card>(game.getCommunityCards());
-			opponentCards = new ArrayList<Card>(game.getUser().getCards());
-			communityCardsDealt = community.size();
-			myEval = new ArrayList<Card>();
-			opponentEval = new ArrayList<Card>();
+			List<Card> deck = new ArrayList<Card>(game.getDeck());
+			List<Card> community = new ArrayList<Card>(game.getCommunityCards());
+			List<Card> opponentCards = new ArrayList<Card>(game.getUser().getCards());
+			int communityCardsDealt = community.size();
 			
 			int wins = 0;
 			for(int i = 0; i < 100; i++) {
-				setup();
-				if(Evaluator.evaluate(myEval) >= Evaluator.evaluate(opponentEval))
+				Collections.shuffle(deck);
+				while(opponentCards.size() < 2)
+					opponentCards.add(deck.remove(deck.size()-1));
+				while(community.size() < 5)
+					community.add(deck.remove(deck.size()-1));
+				
+				if(Evaluator.evaluate(getCards(), community) >= Evaluator.evaluate(opponentCards, community))
 					wins++;
-				tearDown();
+				
+				deck.addAll(opponentCards);
+				opponentCards.clear();
+				while(community.size() > communityCardsDealt)
+					deck.add(community.remove(community.size()-1));
 			}
 			Log.d("POKER", wins + " WINS");
-		}
-		
-		// shuffle, deal out opponent and community cards.
-		// and combine hole cards and community for evaluation
-		private void setup() {
-			Collections.shuffle(deck);
-			while(opponentCards.size() < 2)
-				opponentCards.add(deck.remove(deck.size()-1));
-			while(community.size() < 5)
-				community.add(deck.remove(deck.size()-1));
-			
-			myEval.addAll(getCards());
-			myEval.addAll(community);
-			opponentEval.addAll(opponentCards);
-			opponentEval.addAll(community);
-		}
-		
-		// return cards to deck and clear out hands
-		private void tearDown() {
-			deck.addAll(opponentCards);
-			opponentCards.clear();
-			while(community.size() > communityCardsDealt)
-				deck.add(community.remove(community.size()-1));
-			myEval.clear();
-			opponentEval.clear();
 		}
 	}
 
