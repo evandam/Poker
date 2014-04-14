@@ -13,8 +13,10 @@ import android.graphics.Paint.Align;
 import android.graphics.RectF;
 import android.os.AsyncTask;
 import android.util.SparseArray;
+import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.Toast;
 import ecv.poker.R;
 import ecv.poker.card.Card;
 import ecv.poker.game.Game;
@@ -27,6 +29,7 @@ public class GameView extends View {
 	// padding between cards and buttons
 	private static final int PADDING = 10;
 	
+	private Context context;
 	private MyButton foldButton, checkButton, callButton, betButton, raiseButton;
 	private Slider slider;
 	private Game game;
@@ -43,6 +46,7 @@ public class GameView extends View {
 	
 	public GameView(Context context) {
 		super(context);
+		this.context = context;
 		greenPaint = new Paint();
 		greenPaint.setColor(0xff006600);
 		greenPaint.setAntiAlias(true);
@@ -165,7 +169,11 @@ public class GameView extends View {
 			canvas.drawOval(table, greenPaint);
 			// draw player, computer, and community cards
 			for (int i = 0; i < game.getBot().getCards().size(); i++) {
-				drawBitmap(canvas, R.drawable.card_back, compCardsX - i * (cardW + PADDING),
+				int cardResId = R.drawable.card_back;
+				// show the user the bot's cards at the end of the hand.
+				if(game.isHandOver())
+					cardResId = game.getBot().getCards().get(i).getResId();
+				drawBitmap(canvas, cardResId, compCardsX - i * (cardW + PADDING),
 						compCardsY);
 			}
 			for (int i = 0; i < game.getUser().getCards().size(); i++) {
@@ -186,7 +194,7 @@ public class GameView extends View {
 					communityY + cardH + whitePaint.getFontSpacing(), whitePaint);
 
 			// hide buttons when not your turn
-			if(game.isMyTurn()) {				
+			if(game.isMyTurn() && !game.isHandOver()) {				
 				drawBitmap(canvas, foldButton.getStateResId(), foldButton.getX(), foldButton.getY());
 				if(game.getCurBet() == 0) {
 					checkButton.enable();
@@ -203,9 +211,7 @@ public class GameView extends View {
 					drawBitmap(canvas, callButton.getStateResId(), callButton.getX(), callButton.getY());
 					drawBitmap(canvas, raiseButton.getStateResId(), raiseButton.getX(), raiseButton.getY());
 				}
-			} 
-			
-			// make sure bet values are in correct range - either match current bet or min of big blind
+				// make sure bet values are in correct range - either match current bet or min of big blind
 			if(game.getCurBet() == 0)
 				slider.setMinVal(game.getAnte() * 2);
 			else
@@ -220,6 +226,7 @@ public class GameView extends View {
 			int betValX = betButton.getX() + (int) (buttonW * 1.5);
 			int betValY = betButton.getY() + (int) whitePaint.getFontSpacing();
 			canvas.drawText(slider.getVal() + "", betValX, betValY, whitePaint);
+			} 
 		}
 	}
 
@@ -244,33 +251,28 @@ public class GameView extends View {
 				slider.setCurX(x);
 			break;
 		case MotionEvent.ACTION_UP:
-			// perform actions here...
-			if (foldButton.isPressed()) {
+			// press anywhere after a hand to start a new one
+			if(game.isHandOver())
+				game.setupHand();
+			else if (foldButton.isPressed()) {
 				game.getUser().fold();
-				game.setMyTurn(false);
-				game.makeNextMove();
-				slider.setCurX(slider.getStartX());					
+				nextMove();				
 			} else if (checkButton.isPressed()) {
 				game.getUser().check();
-				game.setMyTurn(false);
-				game.makeNextMove();
-				slider.setCurX(slider.getStartX());					
+				nextMove();						
 			} else if (callButton.isPressed()) {
 				game.getUser().call();
-				game.setMyTurn(false);
-				game.makeNextMove();
-				slider.setCurX(slider.getStartX());					
+				nextMove();			
 			} else if (betButton.isPressed()) {
 				game.getUser().bet(slider.getVal());
-				game.setMyTurn(false);
-				game.makeNextMove();
-				slider.setCurX(slider.getStartX());					
+				nextMove();						
 			} else if (raiseButton.isPressed()) {
 				game.getUser().raise(slider.getVal());
-				game.setMyTurn(false);
-				game.makeNextMove();
-				slider.setCurX(slider.getStartX());					
+				nextMove();					
 			}
+			
+			
+			
 			foldButton.setPressed(false);
 			checkButton.setPressed(false);
 			callButton.setPressed(false);
@@ -283,6 +285,15 @@ public class GameView extends View {
 
 		return true;
 	}
+	
+	private void nextMove() {
+		game.setMyTurn(false);
+		Toast toast = Toast.makeText(context,game.makeNextMove(), Toast.LENGTH_SHORT);
+		toast.setGravity(Gravity.CENTER, 0, 0);
+		toast.show();
+		slider.setCurX(slider.getStartX());
+	}
+
 	
 	// look up the ID in the sparsearray (hashmap) and draw it if found
 	private void drawBitmap(Canvas canvas, int resId, int x, int y) {

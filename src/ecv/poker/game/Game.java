@@ -5,7 +5,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
-import android.util.Log;
 import ecv.poker.card.Card;
 import ecv.poker.card.Evaluator;
 import ecv.poker.player.Player;
@@ -19,7 +18,7 @@ import ecv.poker.player.Player;
  */
 public class Game {
 	
-	private static final String TAG = "poker.game";
+//	private static final String TAG = "poker.game";
 
 	/**
 	 * An action a player can perform
@@ -34,9 +33,10 @@ public class Game {
 	private int pot;
 	private int curBet;
 	private boolean myTurn;
+	private boolean handOver;
 	private Action prevAction, curAction;
 	private int ante;	// TODO: implement blinds?
-	private AIThread aiThread;
+//	private AIThread aiThread;
 	
 	public Game() {
 		random = new Random();
@@ -51,13 +51,21 @@ public class Game {
 		}
 		myTurn = true;
 		ante = 5;	// arbitrary for now...ante 5, min bet 10
-		aiThread = new AIThread();
+		handOver = false;
+//		aiThread = new AIThread();
 	}
 
 	/**
 	 * Deal out cards to players and start the round
 	 */
 	public void setupHand() {
+		handOver = false;
+		deck.addAll(user.getCards());
+		deck.addAll(bot.getCards());
+		deck.addAll(communityCards);
+		user.getCards().clear();
+		bot.getCards().clear();
+		communityCards.clear();
 		Collections.shuffle(deck, random);
 		for (int i = 0; i < 2; i++) {
 			user.getCards().add(deal());
@@ -68,36 +76,58 @@ public class Game {
 		user.bet(ante);
 		bot.bet(ante);
 		curBet = 0;
+		
 		if(!myTurn) 
 			makeBotPlay();
 	}
 
 	/**
 	 * Deal next card if applicable, and make the bot play
+	 * 
+	 * @return message describing move - either bot's move or who won
 	 */
-	public void makeNextMove() {
+	public String makeNextMove() {
+		String msg;
 		// end hand if either folds (since 2 player)
 		if(curAction == Action.FOLD) 
-			endHand();
+			msg = endHand();
 		else {
-			dealNextCard();
+			msg = dealNextCard();
 			if(!myTurn) 
-				makeBotPlay();
+				msg = makeBotPlay();
 		}
+		return msg;
 	}
 
 	/**
 	 * This is where AI logic will go.
 	 * For now, always check/call when possible.
+	 * 
+	 * @return string describing bot's move
 	 */
-	public void makeBotPlay() {
-		if(aiThread.getState() == Thread.State.NEW)
-			aiThread.start();
-		else if(aiThread.getState() == Thread.State.TERMINATED) {
-			aiThread = new AIThread();
-			aiThread.start();
+	public String makeBotPlay() {
+//		if(aiThread.getState() == Thread.State.NEW)
+//			aiThread.start();
+//		else if(aiThread.getState() == Thread.State.TERMINATED) {
+//			aiThread = new AIThread();
+//			aiThread.start();
+//		}
+
+		// no AI..bot doesn't bet/bluff/fold for now...
+		String msg;
+		if(curBet > 0) {
+			msg = "Computer called " + curBet;
+			bot.call();		
+		} else {
+			msg = "Computer checked";
+			bot.check();
 		}
-		// else don't start a new thread...one is already running
+		myTurn = true;
+		String nextMoveStr = makeNextMove();
+		if(nextMoveStr != null)
+			return nextMoveStr;
+		else
+			return msg;
 	}
 
 	/**
@@ -105,7 +135,7 @@ public class Game {
 	 * Turn and river only deal one
 	 * End the hand if all 5 cards are already dealt
 	 */
-	public void dealNextCard() {
+	public String dealNextCard() {
 		if(isBettingDone()) {
 			// starts a new round of betting, clear out previous actions
 			prevAction = null;
@@ -116,11 +146,18 @@ public class Game {
 				communityCards.add(deal());
 				communityCards.add(deal());
 				communityCards.add(deal());
-			} else if(communityCards.size() < 5)
+				return null;
+			} else if(communityCards.size() < 5) {
 				communityCards.add(deal());
-			else
-				endHand();
-		}
+				return null;
+			} else
+				return endHand();
+		} else
+			return null;
+	}
+	
+	public boolean isHandOver() {
+		return handOver;
 	}
 
 	/**
@@ -164,14 +201,11 @@ public class Game {
 		int userRank = Evaluator.evaluate(userCards);
 		int botRank = Evaluator.evaluate(botCards);
 	
-		if (userRank >= botRank) {
+		if (userRank >= botRank) 
 			winners.add(user);
-			Log.d(TAG, "User won!");
-		}
-		if (userRank <= botRank) {
+		if (userRank <= botRank) 
 			winners.add(bot);
-			Log.d(TAG, "Bot won!");
-		}
+
 		return winners;
 	}
 
@@ -180,34 +214,19 @@ public class Game {
 	 * 
 	 * @return message to alert user of outcome
 	 */
-	public void endHand() {
-		String botCards = "";
-		for(Card c : bot.getCards())
-			botCards += c.getId() + " ";
-		String playerCards = "";
-		for(Card c : user.getCards())
-			playerCards += c.getId() + " ";
-		String communityCardsStr = "";
-		for(Card c : communityCards)
-			communityCardsStr += c.getId() + " ";
-		Log.d(TAG, "Community: " + communityCardsStr);
-		Log.d(TAG, "Player: " + playerCards);
-		Log.d(TAG, "Bot: " + botCards);
-		
+	public String endHand() {		
 		List<Player> winners = getWinners();
+		String msg = "";
 		// split pot evenly amongst winners
 		for (Player player : winners) {
 			player.addChips(pot / winners.size());
+			if(player == user)
+				msg += "You won " + pot / winners.size() + " chips!";
+			else
+				msg += "Computer won " + pot / winners.size() + " chips!";
 		}
-		deck.addAll(user.getCards());
-		deck.addAll(bot.getCards());
-		deck.addAll(communityCards);
-		user.getCards().clear();
-		bot.getCards().clear();
-		communityCards.clear();
-		// as long as both players have chips, continue
-		if(user.getChips() > 0 && bot.getChips() > 0)
-			setupHand();
+		handOver = true;
+		return msg;
 	}
 
 	public Card deal() {
@@ -277,8 +296,9 @@ public class Game {
 	
 	/**
 	 * Run simulations of current hand in background until a "smart" move can be found
+	 * TODO: Not ready for submission yet...
 	 */
-	private class AIThread extends Thread {
+	/*private class AIThread extends Thread {
 		
 		private static final int NUM_SIMULATIONS = 1000;
 		private int wins;
@@ -372,5 +392,5 @@ public class Game {
 			myTurn = true;
 			makeNextMove();
 		}
-	}
+	}*/
 }
