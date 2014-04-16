@@ -70,7 +70,7 @@ public class AIPlayer extends Player {
 
 	private class AIThread extends Thread {
 		
-		private static final int NUM_SIMULATIONS = 500;
+		private static final int NUM_SIMULATIONS = 1000;
 		
 		@Override
 		public void run() {
@@ -98,9 +98,14 @@ public class AIPlayer extends Player {
 				while (community.size() > communityCardsDealt)
 					deck.add(community.remove(community.size() - 1));
 			}
+			
 			Log.d("POKER", wins + " WINS");
 			expectedValue = (float) wins / NUM_SIMULATIONS;
 			
+			// If user went while thread was running,
+			// we need to make the move as soon as possible here.
+			// handler ensures that it is done on the calling thread,
+			// since Toasts are used and can only be done on the UI Thread.
 			synchronized(this) {
 				if(moveQueued) {
 					handler.post(new Runnable() {
@@ -108,6 +113,7 @@ public class AIPlayer extends Player {
 						public void run() {
 							doBestMove();
 							moveQueued = false;
+							// need to invalidate since this was done async
 							game.getView().invalidate();
 						}
 					});
@@ -115,5 +121,4 @@ public class AIPlayer extends Player {
 			}
 		}
 	}
-
 }
