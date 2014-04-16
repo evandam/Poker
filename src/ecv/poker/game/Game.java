@@ -9,6 +9,7 @@ import ecv.poker.card.Card;
 import ecv.poker.card.Evaluator;
 import ecv.poker.player.AIPlayer;
 import ecv.poker.player.Player;
+import ecv.poker.view.GameView;
 
 /**
  * A representation of a game of poker. A game has a players, a deck of cards,
@@ -38,13 +39,15 @@ public class Game {
 	private boolean handOver;
 	private Action prevAction, curAction;
 	private int ante; // TODO: implement blinds?
+	private GameView view;
 
 	// private AIThread aiThread;
 
-	public Game() {
+	public Game(GameView view) {
+		this.view = view;
 		random = new Random();
-		user = new Player(this);
-		bot = new AIPlayer(this);
+		user = new Player(this, "You");
+		bot = new AIPlayer(this, "Computer");
 		communityCards = new ArrayList<Card>(5);
 		deck = new ArrayList<Card>(52);
 		for (int i = 100; i <= 400; i += 100) {
@@ -52,10 +55,13 @@ public class Game {
 				deck.add(new Card(i + j));
 			}
 		}
-		myTurn = true;
+		myTurn = true;	// TODO: random user or computer
 		ante = 5; // arbitrary for now...ante 5, min bet 10
 		handOver = false;
-		// aiThread = new AIThread();
+	}
+	
+	public GameView getView() {
+		return view;
 	}
 
 	/**
@@ -79,9 +85,12 @@ public class Game {
 		user.bet(ante);
 		bot.bet(ante);
 		curBet = 0;
-
+		
+		// bot can start evaluating hand
+		bot.calculateExpectedValue();
+		
 		if (!myTurn)
-			makeBotPlay();
+			bot.makeMove();
 	}
 
 	/**
@@ -89,72 +98,41 @@ public class Game {
 	 * 
 	 * @return message describing move - either bot's move or who won
 	 */
-	public String makeNextMove() {
-		String msg;
+	public void makeNextMove() {
 		// end hand if either folds (since 2 player)
 		if (curAction == Action.FOLD)
-			msg = endHand();
+			endHand();
 		else {
-			msg = dealNextCard();
+			dealNextCard();
 			if (!myTurn)
-				msg = makeBotPlay();
+				bot.makeMove();
 		}
-		return msg;
-	}
-
-	/**
-	 * This is where AI logic will go. For now, always check/call when possible.
-	 * 
-	 * @return string describing bot's move
-	 */
-	public String makeBotPlay() {
-		bot.makeMove();
-		try {
-			bot.getThread().join();
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		// no AI..bot doesn't bet/bluff/fold for now...
-		String msg;
-		if (curBet > 0) {
-			msg = "Computer called " + curBet;
-			bot.call();
-		} else {
-			msg = "Computer checked";
-			bot.check();
-		}
-		myTurn = true;
-		String nextMoveStr = makeNextMove();
-		if (nextMoveStr != null)
-			return nextMoveStr;
-		else
-			return msg;
 	}
 
 	/**
 	 * Flop deals out 3 cards at same time, Turn and river only deal one End the
 	 * hand if all 5 cards are already dealt
 	 */
-	public String dealNextCard() {
+	public void dealNextCard() {
 		if (isBettingDone()) {
 			// starts a new round of betting, clear out previous actions
 			prevAction = null;
 			curAction = null;
 			curBet = 0;
-
+			
+			// TODO: AI can start computing EV immediately after a card is dealt,
+			// not just when it's its turn
 			if (communityCards.size() < 3) {
 				communityCards.add(deal());
 				communityCards.add(deal());
 				communityCards.add(deal());
-				return null;
+				bot.calculateExpectedValue();
 			} else if (communityCards.size() < 5) {
 				communityCards.add(deal());
-				return null;
+				bot.calculateExpectedValue();
 			} else
-				return endHand();
-		} else
-			return null;
+				endHand();
+		}
 	}
 
 	public boolean isHandOver() {
@@ -178,26 +156,23 @@ public class Game {
 	 * 
 	 * @return message to alert user of outcome
 	 */
-	public String endHand() {
+	public void endHand() {
 		// determine who won
 		int userRank = Evaluator.evaluate(user.getCards(), communityCards);
 		int botRank = Evaluator.evaluate(bot.getCards(), communityCards);
 		
-		String msg;
 		if (userRank > botRank) {
 			user.addChips(pot);
-			msg = "You won " + pot + " chips!";
+			view.toast("You won " + pot + " chips!");
 		} else if (userRank < botRank) {
 			bot.addChips(pot);
-			msg = "Computer won " + pot + " chips!";
+			view.toast("Computer won " + pot + " chips!");
 		} else {
 			user.addChips(pot / 2);
 			bot.addChips(pot / 2);
-			msg = "Split pot!";
+			view.toast("Split pot!");
 		}
-		
 		handOver = true;
-		return msg;
 	}
 
 	public Card deal() {

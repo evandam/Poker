@@ -46,6 +46,7 @@ public class GameView extends View {
 	private SparseArray<Bitmap> bitmaps;
 
 	public GameView(Context context) {
+		
 		super(context);
 		this.context = context;
 		greenPaint = new Paint();
@@ -73,8 +74,7 @@ public class GameView extends View {
 		slider.setMaxVal(100);
 
 		table = new RectF();
-		game = new Game();
-		game.setupHand();
+		game = new Game(this);
 	}
 
 	@Override
@@ -284,19 +284,19 @@ public class GameView extends View {
 				game.setupHand();
 			else if (foldButton.isPressed()) {
 				game.getUser().fold();
-				nextMove();
+				endMyTurn();
 			} else if (checkButton.isPressed()) {
 				game.getUser().check();
-				nextMove();
+				endMyTurn();
 			} else if (callButton.isPressed()) {
 				game.getUser().call();
-				nextMove();
+				endMyTurn();
 			} else if (betButton.isPressed()) {
 				game.getUser().bet(slider.getVal());
-				nextMove();
+				endMyTurn();
 			} else if (raiseButton.isPressed()) {
 				game.getUser().raise(slider.getVal());
-				nextMove();
+				endMyTurn();
 			}
 
 			foldButton.setPressed(false);
@@ -312,13 +312,17 @@ public class GameView extends View {
 		return true;
 	}
 
-	private void nextMove() {
+	private void endMyTurn() {
 		game.setMyTurn(false);
-		Toast toast = Toast.makeText(context, game.makeNextMove(),
+		game.makeNextMove();
+		slider.setCurX(slider.getStartX());
+	}
+	
+	public void toast(String msg) {
+		Toast toast = Toast.makeText(context, msg,
 				Toast.LENGTH_SHORT);
 		toast.setGravity(Gravity.CENTER, 0, 0);
 		toast.show();
-		slider.setCurX(slider.getStartX());
 	}
 
 	// look up the ID in the sparsearray (hashmap) and draw it if found
@@ -363,6 +367,7 @@ public class GameView extends View {
 		@Override
 		protected void onPostExecute(SparseArray<Bitmap> result) {
 			bitmaps = result;
+			game.setupHand();
 			invalidate();
 		}
 	}

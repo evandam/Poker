@@ -157,10 +157,7 @@ public class Evaluator {
 			if (cards.get(i - 1).getRank() == curRank) {
 				List<Integer> kickers = new ArrayList<Integer>();
 				for (int j = 1; j < cards.size() - 1; j++) {
-					int kickerIndex = i + j;
-					// wrap-around
-					if (kickerIndex >= cards.size())
-						kickerIndex %= cards.size();
+					int kickerIndex = (i + j) % cards.size();
 					kickers.add(cards.get(kickerIndex).getRank());
 				}
 				int val = ONE_PAIR << 20; // put in highest digit
@@ -227,9 +224,7 @@ public class Evaluator {
 				// find the kickers
 				List<Integer> kickers = new ArrayList<Integer>();
 				for (int j = 1; j < cards.size() - 2; j++) {
-					int kickerIndex = i + j;
-					if (kickerIndex >= cards.size())
-						kickerIndex %= cards.size();
+					int kickerIndex = (i + j) % cards.size();
 					kickers.add(cards.get(kickerIndex).getRank());
 				}
 				int val = TRIPS << 20;
@@ -334,9 +329,7 @@ public class Evaluator {
 				int val = QUADS << 20;
 				val += curRank << 4;
 				// kicker is the next card in the list
-				int kickerIndex = i + 1;
-				if (kickerIndex >= cards.size())
-					kickerIndex %= cards.size();
+				int kickerIndex = (i + 1) % cards.size();
 				val += cards.get(kickerIndex).getRank();
 				return val;
 			}

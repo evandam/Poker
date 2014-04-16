@@ -13,11 +13,21 @@ public class Player {
 	private int chips;
 	private List<Card> cards;
 	private Game game;
+	private String name;
 
-	public Player(Game game) {
+	public Player(Game game, String name) {
 		this.game = game;
+		this.name = name;
 		chips = 1000; // or some default number?
 		cards = new ArrayList<Card>(2);
+	}
+	
+	public String getName() {
+		return name;
+	}
+	
+	public void setName(String name) {
+		this.name = name;
 	}
 
 	/**
@@ -42,6 +52,7 @@ public class Player {
 		cards.clear();
 		game.setAction(Game.Action.FOLD);
 		game.setCurBet(0);
+		game.getView().toast(name + " folded");
 	}
 
 	/**
@@ -50,6 +61,7 @@ public class Player {
 	public void check() {
 		game.setAction(Game.Action.CHECK);
 		game.setCurBet(0);
+		game.getView().toast(name + " checked");
 	}
 
 	/**
@@ -61,6 +73,7 @@ public class Player {
 		chips -= game.getCurBet();
 		game.addToPot(game.getCurBet());
 		game.setAction(Game.Action.CALL);
+		game.getView().toast(name + " called " + game.getCurBet());
 		game.setCurBet(0);
 	}
 
@@ -74,6 +87,7 @@ public class Player {
 		game.addToPot(bet);
 		game.setAction(Game.Action.BET);
 		game.setCurBet(bet);
+		game.getView().toast(name + " bet " + bet);
 	}
 
 	/**
@@ -86,6 +100,7 @@ public class Player {
 		game.addToPot(raise);
 		game.setAction(Game.Action.RAISE);
 		game.setCurBet(raise);
+		game.getView().toast(name + " raised " + raise);
 	}
 
 	/**
