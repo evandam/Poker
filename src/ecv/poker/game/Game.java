@@ -38,7 +38,7 @@ public class Game {
 	private boolean myTurn;
 	private boolean handOver;
 	private Action prevAction, curAction;
-	private int ante; // TODO: implement blinds?
+	private int minBet; // TODO: implement blinds?
 	private GameView view;
 
 	// private AIThread aiThread;
@@ -56,12 +56,16 @@ public class Game {
 			}
 		}
 		myTurn = true;	// TODO: random user or computer
-		ante = 5; // arbitrary for now...ante 5, min bet 10
+		minBet = 10; // arbitrary for now...ante 5, min bet 10
 		handOver = false;
 	}
 	
 	public GameView getView() {
 		return view;
+	}
+	
+	public Random getRandom() {
+		return random;
 	}
 
 	/**
@@ -82,8 +86,8 @@ public class Game {
 		}
 		// post antes
 		pot = 0;
-		user.bet(ante);
-		bot.bet(ante);
+		user.bet(minBet/2);
+		bot.bet(minBet/2);
 		curBet = 0;
 		
 		// bot can start evaluating hand
@@ -99,14 +103,9 @@ public class Game {
 	 * @return message describing move - either bot's move or who won
 	 */
 	public void makeNextMove() {
-		// end hand if either folds (since 2 player)
-		if (curAction == Action.FOLD)
-			endHand();
-		else {
-			dealNextCard();
-			if (!myTurn)
-				bot.makeMove();
-		}
+		dealNextCard();
+		if (!myTurn)
+			bot.makeMove();
 	}
 
 	/**
@@ -114,7 +113,9 @@ public class Game {
 	 * hand if all 5 cards are already dealt
 	 */
 	public void dealNextCard() {
-		if (isBettingDone()) {
+		if(curAction == Action.FOLD)
+			endHand();
+		else if (isBettingDone()) {
 			// starts a new round of betting, clear out previous actions
 			prevAction = null;
 			curAction = null;
@@ -147,8 +148,9 @@ public class Game {
 	 */
 	public boolean isBettingDone() {
 		// a player calls another's bet, or they both check
-		return prevAction == Action.BET && curAction == Action.CALL
-				|| prevAction == Action.CHECK && curAction == Action.CHECK;
+		return ((prevAction == Action.BET || prevAction == Action.RAISE) && 
+				curAction == Action.CALL) || (prevAction == Action.CHECK && 
+				curAction == Action.CHECK);
 	}
 
 	/**
@@ -199,12 +201,12 @@ public class Game {
 		return bot;
 	}
 
-	public int getAnte() {
-		return ante;
+	public int getMinBet() {
+		return minBet;
 	}
 
 	public void setAnte(int ante) {
-		this.ante = ante;
+		this.minBet = ante;
 	}
 
 	public List<Card> getCommunityCards() {

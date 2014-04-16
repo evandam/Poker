@@ -17,10 +17,11 @@ import ecv.poker.game.Game;
  * 
  */
 public class AIPlayer extends Player {
-	private Thread aiThread;
+	
 	private float expectedValue;
 	private boolean moveQueued;
 	private Game game;
+	private Thread aiThread;
 	private Handler handler;
 
 	public AIPlayer(Game game, String name) {
@@ -50,10 +51,20 @@ public class AIPlayer extends Player {
 	}
 	
 	private void doBestMove() {
-		if (game.getCurBet() > 0) {
-			call();
+		if (game.getCurBet() == 0) {
+			if(expectedValue > 0.5) {
+				if(game.getPot() / 2 < game.getMinBet())
+					bet(game.getMinBet());
+				else
+					bet(game.getPot() / 2);
+			} else
+				check();
 		} else {
-			check();
+			float potOdds = (float) game.getCurBet() / (game.getCurBet() + game.getPot());
+			if(expectedValue < potOdds)
+				fold();
+			else 
+				call();
 		}
 		game.setMyTurn(true);
 		game.makeNextMove();
@@ -102,18 +113,17 @@ public class AIPlayer extends Player {
 			Log.d("POKER", wins + " WINS");
 			expectedValue = (float) wins / NUM_SIMULATIONS;
 			
-			// If user went while thread was running,
-			// we need to make the move as soon as possible here.
-			// handler ensures that it is done on the calling thread,
-			// since Toasts are used and can only be done on the UI Thread.
+			// If user made move while thread was running,
+			// we need to respond once it is done.
 			synchronized(this) {
 				if(moveQueued) {
+					moveQueued = false;
+					// handler runs on main (UI) thread.
+					// need to handle Toasts and invalidating.
 					handler.post(new Runnable() {
 						@Override
 						public void run() {
 							doBestMove();
-							moveQueued = false;
-							// need to invalidate since this was done async
 							game.getView().invalidate();
 						}
 					});

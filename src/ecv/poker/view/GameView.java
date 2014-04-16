@@ -239,7 +239,7 @@ public class GameView extends View {
 				// make sure bet values are in correct range - either match
 				// current bet or min of big blind
 				if (game.getCurBet() == 0)
-					slider.setMinVal(game.getAnte() * 2);
+					slider.setMinVal(game.getMinBet());
 				else
 					slider.setMinVal(game.getCurBet());
 				if (game.getBot().getChips() > game.getUser().getChips())

@@ -96,6 +96,8 @@ public class Player {
 	 * @param raise
 	 */
 	public void raise(int raise) {
+		chips -= game.getCurBet();
+		game.addToPot(game.getCurBet());
 		chips -= raise;
 		game.addToPot(raise);
 		game.setAction(Game.Action.RAISE);
