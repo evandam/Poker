@@ -247,7 +247,7 @@ public class Evaluator {
 	 */
 	private static int getStraight(List<Card> cards) {
 		boolean isStraight = true;
-		for (int i = 1; i < 5 && isStraight; i++) {
+		for (int i = 1; i < cards.size() && isStraight; i++) {
 			int curRank = cards.get(i).getRank();
 			if (cards.get(i - 1).getRank() != curRank + 1) {
 				// allow ace to "wrap around" so A5432 is a straight
@@ -275,7 +275,7 @@ public class Evaluator {
 	 */
 	private static int getFlush(List<Card> cards) {
 		int val = 0;
-		for (int i = 0; i < 5; i++) {
+		for (int i = 0; i < cards.size(); i++) {
 			if (cards.get(i).getSuit() != cards.get(0).getSuit())
 				return 0;
 			else {

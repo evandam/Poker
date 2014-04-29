@@ -113,6 +113,7 @@ public class Game {
 	 * hand if all 5 cards are already dealt
 	 */
 	public void dealNextCard() {
+		// TODO: tell threads to stop if this happens
 		if(curAction == Action.FOLD)
 			endHand();
 		else if (isBettingDone()) {
