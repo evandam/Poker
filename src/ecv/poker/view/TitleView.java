@@ -9,6 +9,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import ecv.poker.R;
 import ecv.poker.activity.GameActivity;
+import ecv.poker.activity.SettingsActivity;
 
 public class TitleView extends View {
 
@@ -103,7 +104,8 @@ public class TitleView extends View {
 				context.startActivity(gameIntent);
 				playButton.setPressed(false);
 			} else if (settingsButton.isPressed()) {
-				// do something here
+				Intent settingsInent = new Intent(context, SettingsActivity.class);
+				context.startActivity(settingsInent);
 				settingsButton.setPressed(false);
 			}
 			break;

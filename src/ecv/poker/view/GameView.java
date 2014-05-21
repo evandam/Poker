@@ -3,7 +3,10 @@ package ecv.poker.view;
 import java.util.ArrayList;
 import java.util.List;
 
+import android.app.Dialog;
 import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -11,13 +14,19 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Paint.Align;
 import android.graphics.RectF;
+import android.media.AudioManager;
+import android.media.SoundPool;
 import android.os.AsyncTask;
 import android.util.SparseArray;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.Window;
+import android.widget.Button;
 import android.widget.Toast;
 import ecv.poker.R;
+import ecv.poker.activity.SettingsActivity;
+import ecv.poker.activity.TitleActivity;
 import ecv.poker.card.Card;
 import ecv.poker.game.Game;
 
@@ -44,11 +53,27 @@ public class GameView extends View {
 	private int communityX, communityY;
 	private float loadingProgress;
 	private SparseArray<Bitmap> bitmaps;
+	private SoundPool soundPool;
+	private AudioManager audioManager;
+	private boolean audioEnabled;
+	private SharedPreferences settings;
+	public int shuffleSound, dealSound, chipSound;
 
 	public GameView(Context context) {
-		
 		super(context);
 		this.context = context;
+
+		settings = context.getSharedPreferences(
+				SettingsActivity.class.getName(), Context.MODE_PRIVATE);
+
+		audioEnabled = settings.getBoolean(
+				context.getString(R.string.enable_sound), true);
+		soundPool = new SoundPool(5, AudioManager.STREAM_MUSIC, 0);
+		audioManager = (AudioManager) context
+				.getSystemService(Context.AUDIO_SERVICE);
+		shuffleSound = soundPool.load(context, R.raw.shuffle, 1);
+		dealSound = soundPool.load(context, R.raw.deal, 1);
+		chipSound = soundPool.load(context, R.raw.chips, 1);
 		greenPaint = new Paint();
 		greenPaint.setColor(0xff006600);
 		greenPaint.setAntiAlias(true);
@@ -239,13 +264,10 @@ public class GameView extends View {
 				// make sure bet values are in correct range - either match
 				// current bet or min of big blind
 				if (game.getCurBet() == 0)
-					slider.setMinVal(game.getMinBet());
+					slider.setMinVal(game.getMinBetAllowed());
 				else
 					slider.setMinVal(game.getCurBet());
-				if (game.getBot().getChips() > game.getUser().getChips())
-					slider.setMaxVal(game.getUser().getChips());
-				else
-					slider.setMaxVal(game.getBot().getChips());
+				slider.setMaxVal(game.getMaxBetAllowed());
 				slider.draw(canvas, whitePaint);
 
 				// draw value of the bet
@@ -256,6 +278,10 @@ public class GameView extends View {
 						whitePaint);
 			}
 		}
+	}
+	
+	public SharedPreferences getSettings() {
+		return settings;
 	}
 
 	public boolean onTouchEvent(MotionEvent evt) {
@@ -280,9 +306,9 @@ public class GameView extends View {
 			break;
 		case MotionEvent.ACTION_UP:
 			// press anywhere after a hand to start a new one
-			if (game.isHandOver())
+			if (game.isHandOver()) {
 				game.setupHand();
-			else if (foldButton.isPressed()) {
+			} else if (foldButton.isPressed()) {
 				game.getUser().fold();
 				endMyTurn();
 			} else if (checkButton.isPressed()) {
@@ -317,12 +343,19 @@ public class GameView extends View {
 		game.makeNextMove();
 		slider.setCurX(slider.getStartX());
 	}
-	
+
 	public void toast(String msg) {
-		Toast toast = Toast.makeText(context, msg,
-				Toast.LENGTH_SHORT);
+		Toast toast = Toast.makeText(context, msg, Toast.LENGTH_SHORT);
 		toast.setGravity(Gravity.CENTER, 0, 0);
 		toast.show();
+	}
+
+	public void playSound(int id) {
+		if (audioEnabled) {
+			float volume = audioManager
+					.getStreamVolume(AudioManager.STREAM_MUSIC);
+			soundPool.play(id, volume, volume, 1, 0, 1);
+		}
 	}
 
 	// look up the ID in the sparsearray (hashmap) and draw it if found
@@ -330,6 +363,33 @@ public class GameView extends View {
 		Bitmap bmp = bitmaps.get(resId);
 		if (bmp != null)
 			canvas.drawBitmap(bmp, x, y, null);
+	}
+
+	public void makeEndGameDialog() {
+		final Dialog dialog = new Dialog(context);
+		dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+		dialog.setContentView(R.layout.endhand_dialog);
+		Button playAgain = (Button) dialog.findViewById(R.id.play_again_button);
+		playAgain.setOnClickListener(new OnClickListener() {
+
+			@Override
+			public void onClick(View v) {
+				game.reset();
+				dialog.dismiss();
+			}
+		});
+
+		Button exit = (Button) dialog.findViewById(R.id.exit_button);
+		exit.setOnClickListener(new OnClickListener() {
+
+			@Override
+			public void onClick(View v) {
+				Intent intent = new Intent(context, TitleActivity.class);
+				context.startActivity(intent);
+				dialog.dismiss();
+			}
+		});
+		dialog.show();
 	}
 
 	/**

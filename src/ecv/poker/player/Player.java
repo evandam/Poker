@@ -3,6 +3,7 @@ package ecv.poker.player;
 import java.util.ArrayList;
 import java.util.List;
 
+import ecv.poker.R;
 import ecv.poker.card.Card;
 import ecv.poker.game.Game;
 
@@ -15,10 +16,10 @@ public class Player {
 	private Game game;
 	private String name;
 
-	public Player(Game game, String name) {
+	public Player(Game game, String name, int startingChips) {
 		this.game = game;
 		this.name = name;
-		chips = 1000; // or some default number?
+		chips = startingChips;
 		cards = new ArrayList<Card>(2);
 	}
 	
@@ -36,6 +37,10 @@ public class Player {
 	public int getChips() {
 		return chips;
 	}
+	
+	public Game getGame() {
+		return game;
+	}
 
 	/**
 	 * @param i
@@ -43,6 +48,10 @@ public class Player {
 	 */
 	public void addChips(int i) {
 		chips += i;
+	}
+	
+	public void setChips(int i) {
+		chips = i;
 	}
 
 	/**
@@ -52,7 +61,8 @@ public class Player {
 		cards.clear();
 		game.setAction(Game.Action.FOLD);
 		game.setCurBet(0);
-		game.getView().toast(name + " folded");
+		String format = game.getView().getContext().getString(R.string.folded);
+		game.getView().toast(String.format(format, name));
 	}
 
 	/**
@@ -61,7 +71,8 @@ public class Player {
 	public void check() {
 		game.setAction(Game.Action.CHECK);
 		game.setCurBet(0);
-		game.getView().toast(name + " checked");
+		String format = game.getView().getContext().getString(R.string.checked);
+		game.getView().toast(String.format(format, name));
 	}
 
 	/**
@@ -70,11 +81,14 @@ public class Player {
 	 * @param bet
 	 */
 	public void call() {
+		game.getView().playSound(game.getView().chipSound);
 		chips -= game.getCurBet();
 		game.addToPot(game.getCurBet());
 		game.setAction(Game.Action.CALL);
-		game.getView().toast(name + " called " + game.getCurBet());
+		String format = game.getView().getContext().getString(R.string.called);
+		game.getView().toast(String.format(format, name, game.getCurBet()));
 		game.setCurBet(0);
+		
 	}
 
 	/**
@@ -83,11 +97,13 @@ public class Player {
 	 * @param bet
 	 */
 	public void bet(int bet) {
+		game.getView().playSound(game.getView().chipSound);
 		chips -= bet;
 		game.addToPot(bet);
 		game.setAction(Game.Action.BET);
 		game.setCurBet(bet);
-		game.getView().toast(name + " bet " + bet);
+		String format = game.getView().getContext().getString(R.string.bet);
+		game.getView().toast(String.format(format, name, bet));
 	}
 
 	/**
@@ -96,13 +112,15 @@ public class Player {
 	 * @param raise
 	 */
 	public void raise(int raise) {
+		game.getView().playSound(game.getView().chipSound);
 		chips -= game.getCurBet();
 		game.addToPot(game.getCurBet());
 		chips -= raise;
 		game.addToPot(raise);
 		game.setAction(Game.Action.RAISE);
 		game.setCurBet(raise);
-		game.getView().toast(name + " raised " + raise);
+		String format = game.getView().getContext().getString(R.string.raised);
+		game.getView().toast(String.format(format, name, raise));
 	}
 
 	/**

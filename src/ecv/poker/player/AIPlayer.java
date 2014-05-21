@@ -17,20 +17,22 @@ import ecv.poker.game.Game;
  * 
  */
 public class AIPlayer extends Player {
-	
+
 	private float expectedValue;
 	private boolean moveQueued;
-	private Game game;
 	private Thread aiThread;
 	private Handler handler;
+	private int numSimulations;
+	private float bluffFrequency;
 
-	public AIPlayer(Game game, String name) {
-		super(game, name);
-		this.game = game;
-		aiThread = new AIThread();
+	public AIPlayer(Game game, String name, int startingChips) {
+		super(game, name, startingChips);
+		numSimulations = game.getView().getSettings()
+				.getInt("simulations", 500);
+		bluffFrequency = game.getView().getSettings().getInt("bluff", 20) / 100f;
 		handler = new Handler();
 	}
-	
+
 	public float getExpectedValue() {
 		return expectedValue;
 	}
@@ -42,58 +44,89 @@ public class AIPlayer extends Player {
 	public void makeMove() {
 		// if the thread hasn't finished calculating the value,
 		// tell it to call doBestMove when it's done
-		synchronized(aiThread) {
-			if(aiThread.isAlive())
+		synchronized (aiThread) {
+			if (aiThread.isAlive())
 				moveQueued = true;
 			else
 				doBestMove();
 		}
 	}
-	
+
 	private void doBestMove() {
-		if (game.getCurBet() == 0) {
-			if(expectedValue > 0.5) {
-				if(game.getPot() / 2 < game.getMinBet())
-					bet(game.getMinBet());
+		// determine how much to bet...try half of current pot (3:1 odds)
+		// otherwise make it the min/max bet possible
+		int betSize = getGame().getPot() / 2;
+		if(betSize > getGame().getMaxBetAllowed())
+			betSize = getGame().getMaxBetAllowed();
+		else if(betSize < getGame().getMinBetAllowed())
+			betSize = getGame().getMinBetAllowed();
+		
+		// consider amount needed to call bet and raise more
+		int raiseSize = getGame().getCurBet();
+		if(raiseSize + getGame().getCurBet() > getGame().getMaxBetAllowed())
+			raiseSize = getGame().getMaxBetAllowed() - getGame().getCurBet();
+			
+		if (getGame().getCurBet() == 0) {
+			// bet when better than 50% chance of winning
+			if (expectedValue > 0.5 && betSize > 0) {
+				bet(betSize);
+			} else {
+				// negative expectation, but betting as a bluff
+				if (getGame().getRandom().nextFloat() < bluffFrequency)
+					bet(betSize);
 				else
-					bet(game.getPot() / 2);
-			} else
-				check();
+					check();
+			}
 		} else {
-			float potOdds = (float) game.getCurBet() / (game.getCurBet() + game.getPot());
-			if(expectedValue < potOdds)
-				fold();
-			else 
-				call();
+			// PO = bet / (bet + pot)
+			float potOdds = (float) getGame().getCurBet()
+					/ (getGame().getCurBet() + getGame().getPot());
+
+			// positive expectation (EV better than PO)
+			if (expectedValue >= potOdds) {
+				// "significantly" better EV to PO..or bluffing
+				if (raiseSize > 0 && (expectedValue > 1.5 * potOdds
+						|| getGame().getRandom().nextFloat() < bluffFrequency)) {
+					raise(raiseSize);
+				} else
+					call();
+			} else {
+				// note: either bluff or fold with negative expectation, never flat call
+				if (raiseSize > 0 && getGame().getRandom().nextFloat() < bluffFrequency)
+					raise(raiseSize);
+				else
+					fold();
+			}
 		}
-		game.setMyTurn(true);
-		game.makeNextMove();
+		getGame().setMyTurn(true);
+		getGame().makeNextMove();
 	}
-	
+
 	/**
-	 * Run simulations do calculate the expected odds of winning the hand
-	 * The ExpectedValue is a float between 0 and 1, with 1 being a guaranteed win.
+	 * Run simulations do calculate the expected odds of winning the hand The
+	 * ExpectedValue is a float between 0 and 1, with 1 being a guaranteed win.
 	 */
 	public void calculateExpectedValue() {
+		Log.d("POKER", "calculating EV");
 		aiThread = new AIThread();
 		aiThread.start();
 	}
 
 	private class AIThread extends Thread {
-		
-		private static final int NUM_SIMULATIONS = 1000;
-		
+
 		@Override
 		public void run() {
-			Log.d("POKER", "Calculating EV");
 			// make copies of all cards in play
-			List<Card> deck = new ArrayList<Card>(game.getDeck());
-			List<Card> community = new ArrayList<Card>(game.getCommunityCards());
-			List<Card> opponentCards = new ArrayList<Card>(game.getUser().getCards());
+			List<Card> deck = new ArrayList<Card>(getGame().getDeck());
+			List<Card> community = new ArrayList<Card>(getGame()
+					.getCommunityCards());
+			List<Card> opponentCards = new ArrayList<Card>(getGame().getUser()
+					.getCards());
 			int communityCardsDealt = community.size();
 
 			int wins = 0;
-			for (int i = 0; i < NUM_SIMULATIONS; i++) {
+			// break if player folds -- ending hand earlier
+			for (int i = 0; i < numSimulations && !getGame().isHandOver(); i++) {
 				Collections.shuffle(deck);
 				while (opponentCards.size() < 2)
 					opponentCards.add(deck.remove(deck.size() - 1));
@@ -109,14 +142,13 @@ public class AIPlayer extends Player {
 				while (community.size() > communityCardsDealt)
 					deck.add(community.remove(community.size() - 1));
 			}
-			
-			Log.d("POKER", wins + " WINS");
-			expectedValue = (float) wins / NUM_SIMULATIONS;
-			
+
+			expectedValue = (float) wins / numSimulations;
+
 			// If user made move while thread was running,
 			// we need to respond once it is done.
-			synchronized(this) {
-				if(moveQueued) {
+			synchronized (this) {
+				if (moveQueued) {
 					moveQueued = false;
 					// handler runs on main (UI) thread.
 					// need to handle Toasts and invalidating.
@@ -124,7 +156,7 @@ public class AIPlayer extends Player {
 						@Override
 						public void run() {
 							doBestMove();
-							game.getView().invalidate();
+							getGame().getView().invalidate();
 						}
 					});
 				}

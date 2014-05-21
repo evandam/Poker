@@ -2,7 +2,24 @@
 <resources>
 
     <string name="app_name">Poker</string>
-    <string name="action_settings">Settings</string>
-    <string name="title_activity_game">Game Activity</string>
+    <string name="title_activity_game">Game</string>
+    <string name="title_activity_settings">Settings</string>
+    <string name="enable_sound">Enable sound</string>
+    <string name="chip_stack">Starting chip stack:</string>
+    <string name="ante">Ante:</string>
+    <string name="simulations">Number of simulations by AI:</string>
+    <string name="bluff_frequency">Bluff frequency for AI (0 to 100):</string>
+    <string name="game_over">Game Over!</string>
+    <string name="play_again">Play again</string>
+    <string name="exit">Exit</string>
+    <string name="you">You</string>
+    <string name="computer">Computer</string>
+    <string name="award_chips">%1$s won %2$d chips!</string>
+    <string name="split_pot">Split pot!</string>
+    <string name="folded">%1$s folded!</string>
+    <string name="checked">%1$s checked</string>
+    <string name="called">%1$s called %2$d</string>
+    <string name="bet">%1$s bet %2$d!</string>
+    <string name="raised">%1$s raised %2$d!</string>
 
 </resources>

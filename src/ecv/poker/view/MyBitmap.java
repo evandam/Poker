@@ -1,7 +1,8 @@
 package ecv.poker.view;
 
 /**
- * Wrapper for a resource ID and dimensions of a bitmap
+ * Wrapper for a resource ID and dimensions of a bitmap.
+ * Used for loading bitmaps asynchronously
  * 
  * @author evan
  * 

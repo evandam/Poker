@@ -14,6 +14,7 @@ public class TitleActivity extends Activity {
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
 		getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
 				WindowManager.LayoutParams.FLAG_FULLSCREEN);
+
 		TitleView titleView = new TitleView(this);
 		titleView.setKeepScreenOn(true);
 		setContentView(titleView);
